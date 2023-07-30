@@ -73,19 +73,25 @@ void power_ctrl_spwm()
 {
 
     static uint16_t count=0;
+    if(count==0)
+    {
+        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_1,0);
+    }
     if(count<100)
     {
-        gpio_bit_reset(GPIOC,GPIO_PIN_7);
         timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,(uint16_t)(_sin((float)count/200*_2PI)*TIMER_CAR(TIMER7)));
     }
-    else
-    {       
-        gpio_bit_set(GPIOC,GPIO_PIN_7);
-        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,(_sin((float)count/200*_2PI)+1)*TIMER_CAR(TIMER7));
+    if(count==100)
+    {
         timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,0);
+    
+    }
+    if(count >=100)
+    {       
+        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_1,(uint16_t)(_sin((float)(count-100)/200*_2PI)*TIMER_CAR(TIMER7)));
     }
     count++;
-    if(count==100)
+    if(count==200)
     {
         count=0;
     }

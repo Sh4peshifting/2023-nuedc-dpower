@@ -90,13 +90,13 @@ void pwm_config2()
     /* 使能时钟 */
 	rcu_periph_clock_enable(RCU_GPIOC);
 	/* 配置GPIO的模式 */
-	gpio_mode_set(GPIOC,GPIO_MODE_AF,GPIO_PUPD_NONE,GPIO_PIN_6);
+	gpio_mode_set(GPIOC,GPIO_MODE_AF,GPIO_PUPD_NONE,GPIO_PIN_6|GPIO_PIN_7);
 	/* 配置GPIO的输出 */
 	gpio_output_options_set(GPIOC,GPIO_OTYPE_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_6|GPIO_PIN_7);
 	/* 配置GPIO的复用 */
-	gpio_af_set(GPIOC,GPIO_AF_3,GPIO_PIN_6);
+	gpio_af_set(GPIOC,GPIO_AF_3,GPIO_PIN_6|GPIO_PIN_7);
 	
-    gpio_mode_set(GPIOC,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE,GPIO_PIN_7);
+    //gpio_mode_set(GPIOC,GPIO_MODE_OUTPUT,GPIO_PUPD_NONE,GPIO_PIN_7);
     
     rcu_periph_clock_enable(RCU_TIMER7);
     
