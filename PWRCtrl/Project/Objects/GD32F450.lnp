@@ -1,0 +1,27 @@
+--cpu=Cortex-M4.fp.sp
+".\objects\systick.o"
+".\objects\main.o"
+".\objects\gd32f4xx_it.o"
+".\objects\system_gd32f4xx.o"
+".\objects\startup_gd32f450_470.o"
+".\objects\power.o"
+".\objects\dp_pid.o"
+".\objects\dp_filter.o"
+".\objects\power_pwm.o"
+".\objects\power_adc.o"
+".\objects\power_uart.o"
+".\objects\uart_screen_comm.o"
+".\objects\hlw8032.o"
+".\objects\foc_utils.o"
+".\objects\bsp_led.o"
+".\objects\gd32f4xx_gpio.o"
+".\objects\gd32f4xx_rcu.o"
+".\objects\gd32f4xx_dma.o"
+".\objects\gd32f4xx_usart.o"
+".\objects\gd32f4xx_adc.o"
+".\objects\gd32f4xx_timer.o"
+".\objects\gd32f4xx_misc.o"
+--library_type=microlib --strict --scatter ".\Objects\GD32F450.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\GD32F450.map" -o .\Objects\GD32F450.axf
