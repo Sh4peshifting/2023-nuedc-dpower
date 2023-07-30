@@ -8,6 +8,7 @@
 #include "power_adc.h"
 #include "power_pwm.h"
 #include "power_uart.h"
+#include "power_timer.h"
 
 #define DP_PWM_PER   TIMER_CAR(TIMER1)
 #define MAX_PWM_CMP   (uint16_t)(0.90F * TIMER_CAR(TIMER1)) //PWM最大比较值
@@ -19,4 +20,5 @@ void power_ctrl_buck_boost(void);
 void eg2104_sd_init(void);
 void timer1_set_pwm(uint16_t pwm_cmp_value);
 void buck_boost_init(void);
-#endif _POWER_H
+
+#endif 

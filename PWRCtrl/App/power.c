@@ -75,20 +75,20 @@ void power_ctrl_spwm()
     static uint16_t count=0;
     if(count==0)
     {
-        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_1,0);
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,0);
     }
     if(count<100)
     {
-        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,(uint16_t)(_sin((float)count/200*_2PI)*TIMER_CAR(TIMER7)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)count/200*_2PI)*TIMER_CAR(TIMER2)));
     }
     if(count==100)
     {
-        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,0);
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,0);
     
     }
     if(count >=100)
     {       
-        timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_1,(uint16_t)(_sin((float)(count-100)/200*_2PI)*TIMER_CAR(TIMER7)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,(uint16_t)(_sin((float)(count-100)/200*_2PI)*TIMER_CAR(TIMER2)));
     }
     count++;
     if(count==200)
@@ -106,12 +106,21 @@ void TIMER7_UP_TIMER12_IRQHandler()
     if(timer_flag_get(TIMER7,TIMER_FLAG_UP) == SET )
     {
         timer_flag_clear(TIMER7,TIMER_FLAG_UP);
-        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
         if(buck_boost_en==1)
         {
             power_ctrl_buck_boost();
         }
+        
+    }
+}
+
+void TIMER3_IRQHandler()
+{
+     if(timer_flag_get(TIMER3,TIMER_FLAG_UP) == SET )
+    {
+        timer_flag_clear(TIMER3,TIMER_FLAG_UP);
         power_ctrl_spwm();
+        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
     }
 }
 

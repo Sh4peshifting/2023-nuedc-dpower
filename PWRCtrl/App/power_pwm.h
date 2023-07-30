@@ -6,4 +6,5 @@
 void pwm_gpio_config(void);
 void pwm_config(void);
 void pwm_config2(void);
+void timer2_pwm_config(void);
 #endif _POWER_PWM_H

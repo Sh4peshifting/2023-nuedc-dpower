@@ -36,7 +36,7 @@ int main(void)
     // gpio_bit_write(PORT_LED2,PIN_LED2,RESET);		// LED2输出低电平
     gpio_bit_write(PORT_LED2,PIN_LED2,SET);  			// LED2输出高电平
     //buck_boost_init();
-    
+    rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
     usart0_gpio_config(115200U);
     uart3_gpio_config(4800U);
 
@@ -47,8 +47,11 @@ int main(void)
     
     timer1_set_pwm(600);
     
-    pwm_config2();
+
     timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,6000);
+    
+    timer2_pwm_config();
+    timer3_int_init();
     
     for(uint8_t i=0;i<3;i++)
     {

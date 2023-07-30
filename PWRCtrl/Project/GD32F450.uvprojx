@@ -463,6 +463,11 @@
               <FileType>1</FileType>
               <FilePath>..\App\foc_utils.c</FilePath>
             </File>
+            <File>
+              <FileName>power_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\power_timer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

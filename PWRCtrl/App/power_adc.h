@@ -7,5 +7,5 @@ void adc_gpio_config();
 void adc_config(void);
 extern volatile uint32_t adc0_value[6];
 
-#endif _POWER_ADC_H
+#endif 
 
