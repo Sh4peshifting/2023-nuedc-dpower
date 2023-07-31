@@ -7,12 +7,15 @@ PID_STRUCT gPID_PFC_I_Loop; //pfc
 
 LOW_FILTER_STRUCT  lowfilter_vout_buckboost;
 LOW_FILTER_STRUCT  lowfilter_vout_pfc;
+LOW_FILTER_STRUCT  lowfilter_acin1_pfc;
+LOW_FILTER_STRUCT  lowfilter_acin2_pfc;
+LOW_FILTER_STRUCT  lowfilter_iin_pfc;
+/*定义校正参数                    x1*****y1*****x2*****y2*****y******a*********************b   */
+ELEC_INFO_STRUCT v_in1_struct =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
+ELEC_INFO_STRUCT i_in1_struct =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+ELEC_INFO_STRUCT acv_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
 
-/*定义校正参数                  x1*****y1*****x2*****y2*****y******a*********************b   */
-ELEC_INFO_STRUCT v_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数  
-ELEC_INFO_STRUCT i_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数 
-ELEC_INFO_STRUCT acv_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数 
-
+AC_Para ac1info;
 
 /**
  **********************************************************
@@ -116,8 +119,8 @@ void pfc_init()
     gPID_PFC_I_Loop.Ti      = 0.46f;
     gPID_PFC_I_Loop.Td      = 0.01f;
     gPID_PFC_I_Loop.Ek_Dead = 0.01f;
-    gPID_PFC_I_Loop.OutMin  = 0.015f * 2399;//最小占空比
-    gPID_PFC_I_Loop.OutMax  = 0.9f * 2399;//最大占空比
+    gPID_PFC_I_Loop.OutMin  = 0.015f * TIMER_CAR(TIMER3);//最小占空比
+    gPID_PFC_I_Loop.OutMax  = 0.9f * TIMER_CAR(TIMER3);//最大占空比
     pid_func.init(&gPID_PFC_I_Loop);
     
 }

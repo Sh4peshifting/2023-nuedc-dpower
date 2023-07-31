@@ -40,7 +40,7 @@ OF SUCH DAMAGE.
 
 /* led spark function */
 void led_spark(void);
-
+void task_manager_beat(void);
 #endif /* __MAIN_H */
 
 

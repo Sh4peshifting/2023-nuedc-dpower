@@ -140,4 +140,5 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
     delay_decrement();
+    task_manager_beat();
 }

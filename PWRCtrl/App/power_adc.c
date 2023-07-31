@@ -39,7 +39,7 @@ void adc_config()
     /* enable DMA channel */
     dma_channel_enable(DMA1, DMA_CH0);
     
-    
+    adc_clock_config(ADC_ADCCK_HCLK_DIV6);
      /* ADC mode config */
     adc_sync_mode_config(ADC_SYNC_MODE_INDEPENDENT);
     /* ADC continous function enable */

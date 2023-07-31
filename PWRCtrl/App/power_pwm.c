@@ -1,6 +1,6 @@
 #include "power_pwm.h"
 
-/*timer1 and timer7*/
+/*timer1 ch2 ch3 and timer7*/
 void pwm_config()
 {
 
@@ -229,7 +229,7 @@ void timer3_pwm_config()
     
     
     timer_slave_mode_select(TIMER3,TIMER_SLAVE_MODE_EVENT);
-   timer_input_trigger_source_select(TIMER3,TIMER_SMCFG_TRGSEL_ITI1);
+    timer_input_trigger_source_select(TIMER3,TIMER_SMCFG_TRGSEL_ITI1);
     //timer_primary_output_config(TIMER7,ENABLE);
     
     //nvic_irq_enable(TIMER7_UP_TIMER12_IRQn, 0, 0);

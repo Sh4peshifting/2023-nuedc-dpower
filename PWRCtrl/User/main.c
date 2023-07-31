@@ -16,8 +16,12 @@
 
 #include "power.h"
 #include "uart_screen_comm.h"
-#include "HLW8032.h"
 
+void task_hmi_rx(void);
+void task_hmi_tx(void);
+void task_hlw8032(void);
+
+uint8_t flag_hmi_tx=0;
 /************************************************
 函数名称 ： main
 功    能 ： 主函数
@@ -40,12 +44,10 @@ int main(void)
     
     usart0_gpio_config(115200U);
     uart3_gpio_config(4800U);
+    
     eg2104_sd_init();
+    
     //buck_boost_init();
-    
-    AC_Para ac1info;
-     
-    
     timer1_set_pwm(700);
     
     pfc_init();
@@ -59,44 +61,73 @@ int main(void)
         delay_1ms(200);
     }
     
-    
-    obj rec;
+
     while(1) 
     {
 		if(uart3_complete_flag == 1)
-        {
-           
+        {   
            uart3_complete_flag = 0;
-           HLW8032_Get_NoCalibration(uart3_buff,&ac1info);
-           send_two_decimal("current",ac1info.I);
-           send_two_decimal("voltage",ac1info.V);
-           send_two_decimal("power",ac1info.AC_P);
-           send_three_decimal("power_factor",ac1info.F);
+           task_hlw8032();
         } 
         if(uart0_complete_flag == 1)
         {
             uart0_complete_flag = 0;
-            rec=receive_msg_proc((char *)uart0_buff);
-            if(rec.objname==SWITCH)
-            {
-                if(rec.val==1)
-                {
-                    gpio_bit_set(GPIOE,GPIO_PIN_2);
-                    buck_boost_en=1;
-                }
-                else if(rec.val==0)
-                {
-                    gpio_bit_reset(GPIOE,GPIO_PIN_2);
-                    buck_boost_en=0;
-                }
-            }
-            
+            task_hmi_rx();
+        }
+        if(flag_hmi_tx == 1)
+        {
+            flag_hmi_tx=0;
+            task_hmi_tx();
         }
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_2);
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_5);
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_6);
-        send_two_decimal("voltage",(float)adc0_value[0]*3.3f/4096.f*20);
         delay_1ms(100);
     }
+}
+
+void task_hmi_rx()
+{
+    obj rec;
+    rec=receive_msg_proc((char *)uart0_buff);
+    if(rec.objname==SWITCH)
+    {
+        if(rec.val==1)
+        {
+            gpio_bit_set(GPIOE,GPIO_PIN_2);
+            buck_boost_en=1;
+        }
+        else if(rec.val==0)
+        {
+            gpio_bit_reset(GPIOE,GPIO_PIN_2);
+            buck_boost_en=0;
+        }
+    }
+}
+void task_hmi_tx()
+{
+    send_two_decimal("voltage",(float)adc0_value[0]*3.3f/4096.f*20);
+}
+void task_hlw8032()
+{
+    HLW8032_Get_NoCalibration(uart3_buff,&ac1info);
+    send_two_decimal("current",ac1info.I);
+    send_two_decimal("voltage",ac1info.V);
+    send_two_decimal("power",ac1info.AC_P);
+    send_three_decimal("power_factor",ac1info.F);
+}
+
+/*systick中断里每1ms调用一次*/
+void task_manager_beat()
+{
+    static uint16_t cnt_hmi_tx=0;
+    
+    if(cnt_hmi_tx == 0) 
+    {
+        flag_hmi_tx=1;
+        cnt_hmi_tx=100;
+    }
+    
+    cnt_hmi_tx--;
 }

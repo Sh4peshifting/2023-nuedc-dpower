@@ -11,4 +11,4 @@ void usart_send_data(uint8_t ucch);
 void usart_send_string(uint8_t *ucstr,uint8_t length);
 void uart3_gpio_config(uint32_t band_rate);
 
-#endif _POWER_UART_H
+#endif 
