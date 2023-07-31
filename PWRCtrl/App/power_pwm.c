@@ -132,7 +132,55 @@ void pwm_config2()
 
 void timer2_pwm_config()
 {
-    rcu_periph_clock_enable(RCU_GPIOC);
+    rcu_periph_clock_enable(RCU_GPIOB);
+	/* 配置GPIO的模式 */
+	gpio_mode_set(GPIOB,GPIO_MODE_AF,GPIO_PUPD_NONE,GPIO_PIN_8|GPIO_PIN_9);
+	/* 配置GPIO的输出 */
+	gpio_output_options_set(GPIOB,GPIO_OTYPE_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_8|GPIO_PIN_9);
+	/* 配置GPIO的复用 */
+	gpio_af_set(GPIOB,GPIO_AF_2,GPIO_PIN_8|GPIO_PIN_9);
+    
+    rcu_periph_clock_enable(RCU_TIMER3);
+    
+    timer_parameter_struct timere_initpara;                 // 定义定时器结构体
+	timer_oc_parameter_struct timer_ocintpara;					    //定时器比较输出结构体
+    
+    timer_deinit(TIMER3);														// 复位定时器
+	timere_initpara.prescaler = 0;                   		// 时钟预分频值   PSC_CLK= 200MHZ / 200 = 1MHZ       
+	timere_initpara.alignedmode = TIMER_COUNTER_EDGE;      	// 边缘对齐                
+	timere_initpara.counterdirection = TIMER_COUNTER_UP;    // 向上计数    	                    
+	timere_initpara.period = 5999;      									  // 周期    T = 10000 * 1MHZ = 10ms  f = 100HZ   
+	timere_initpara.clockdivision = TIMER_CKDIV_DIV1;    	  // 分频因子
+	//timere_initpara.repetitioncounter = 0;                  // 重复计数器 0-255  
+	timer_init(TIMER3,&timere_initpara);							// 初始化定时器
+    
+    timer_ocintpara.ocpolarity = TIMER_OC_POLARITY_HIGH;   																	  // 有效电平的极性
+	timer_ocintpara.outputstate = TIMER_CCX_ENABLE;																						// 配置比较输出模式状态 也就是使能PWM输出到端口
+	timer_channel_output_config(TIMER3,TIMER_CH_2,&timer_ocintpara);
+    timer_channel_output_config(TIMER3,TIMER_CH_3,&timer_ocintpara);
+    
+    timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_2,0);// 配置定时器通道输出脉冲值
+	timer_channel_output_mode_config(TIMER3,TIMER_CH_2,TIMER_OC_MODE_PWM1);	// 配置定时器通道输出比较模式
+	timer_channel_output_shadow_config(TIMER3,TIMER_CH_2,TIMER_OC_SHADOW_DISABLE);// 配置定时器通道输出影子寄存器
+
+    timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_3,0);									// 配置定时器通道输出脉冲值
+	timer_channel_output_mode_config(TIMER3,TIMER_CH_3,TIMER_OC_MODE_PWM1);				// 配置定时器通道输出比较模式
+	timer_channel_output_shadow_config(TIMER3,TIMER_CH_3,TIMER_OC_SHADOW_DISABLE);// 配置定时器通道输出影子寄存器
+    
+    timer_auto_reload_shadow_enable(TIMER3);
+    
+    //timer_primary_output_config(TIMER7,ENABLE);
+    
+    //nvic_irq_enable(TIMER7_UP_TIMER12_IRQn, 0, 0);
+    //timer_interrupt_enable(TIMER7,TIMER_INT_UP);
+    
+    timer_enable(TIMER3);
+    
+}
+
+void timer3_pwm_config()
+{
+    rcu_periph_clock_enable(RCU_GPIOB);
 	/* 配置GPIO的模式 */
 	gpio_mode_set(GPIOC,GPIO_MODE_AF,GPIO_PUPD_NONE,GPIO_PIN_6|GPIO_PIN_7);
 	/* 配置GPIO的输出 */

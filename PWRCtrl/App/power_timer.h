@@ -3,7 +3,7 @@
 
 #include "gd32f4xx.h"
 
-void timer3_int_init(void);
+void timer8_int_init(void);
 
 
-#endif _POWER_TIMER_H
+#endif 

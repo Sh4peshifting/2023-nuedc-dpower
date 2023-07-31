@@ -46,19 +46,38 @@ void eg2104_sd_init()
     
 }
 
+void zcd_init()
+{
+    rcu_periph_clock_enable(RCU_GPIOG);
+    rcu_periph_clock_enable(RCU_SYSCFG);
+    
+    gpio_mode_set(GPIOG,GPIO_MODE_INPUT,GPIO_PUPD_NONE,GPIO_PIN_6);
+    nvic_irq_enable(EXTI5_9_IRQn,0U,0U);
+    syscfg_exti_line_config(EXTI_SOURCE_GPIOG,EXTI_SOURCE_PIN0);
+	/* 初始化中断线 */
+	exti_init(EXTI_6,EXTI_INTERRUPT,EXTI_TRIG_BOTH);
+	/* 使能中断 */
+	exti_interrupt_enable(EXTI_6);
+	/* 清除中断标志位 */
+	exti_interrupt_flag_clear(EXTI_6);
+    
+    
+}
 void buck_boost_init()
 {
+    pwm_config();
+    adc_config();
+    
     pid_func.reset(&gPID_VoltOutLoop);
     gPID_VoltOutLoop.T       = 0.50f;//PID控制周期，单位100us
-    gPID_VoltOutLoop.Kp      = 10.0f;      
-    gPID_VoltOutLoop.Ti      = 0.35f;
-    gPID_VoltOutLoop.Td      = 0.02f;
+    gPID_VoltOutLoop.Kp      = 5.0f;      
+    gPID_VoltOutLoop.Ti      = 0.46f;
+    gPID_VoltOutLoop.Td      = 0.01f;
     gPID_VoltOutLoop.Ek_Dead = 0.01f;
-    gPID_VoltOutLoop.OutMin  = 0.03f * DP_PWM_PER;//最小占空比
-    gPID_VoltOutLoop.OutMax  = 1.70f * DP_PWM_PER;//最大占空比
+    gPID_VoltOutLoop.OutMin  = 0.015f * DP_PWM_PER;//最小占空比
+    gPID_VoltOutLoop.OutMax  = 1.80f * DP_PWM_PER;//最大占空比
     pid_func.init(&gPID_VoltOutLoop);
-    adc_config();
-    pwm_config();
+    
 }
 void power_ctrl_buck_boost()
 {
@@ -108,19 +127,27 @@ void TIMER7_UP_TIMER12_IRQHandler()
         timer_flag_clear(TIMER7,TIMER_FLAG_UP);
         if(buck_boost_en==1)
         {
-            power_ctrl_buck_boost();
+           power_ctrl_buck_boost();
         }
-        
+        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
     }
 }
 
-void TIMER3_IRQHandler()
+void TIMER0_BRK_TIMER8_IRQHandler()
 {
      if(timer_flag_get(TIMER3,TIMER_FLAG_UP) == SET )
     {
         timer_flag_clear(TIMER3,TIMER_FLAG_UP);
         power_ctrl_spwm();
         gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+    }
+}
+/*ZCD中断*/
+void EXTI5_9_IRQHandler()
+{
+    if(exti_interrupt_flag_get(EXTI_6) == SET)
+    {
+        
     }
 }
 

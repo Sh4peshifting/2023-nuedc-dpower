@@ -35,23 +35,23 @@ int main(void)
     // gpio_bit_reset(GPIOD,GPIO_PIN_7);						// PD7输出低电平
     // gpio_bit_write(PORT_LED2,PIN_LED2,RESET);		// LED2输出低电平
     gpio_bit_write(PORT_LED2,PIN_LED2,SET);  			// LED2输出高电平
-    //buck_boost_init();
+    
     rcu_timer_clock_prescaler_config(RCU_TIMER_PSC_MUL4);
+    
     usart0_gpio_config(115200U);
     uart3_gpio_config(4800U);
-
- 
+    eg2104_sd_init();
+    buck_boost_init();
     
     AC_Para ac1info;
-    eg2104_sd_init(); 
+     
     
-    timer1_set_pwm(600);
+    timer1_set_pwm(700);
     
 
-    timer_channel_output_pulse_value_config(TIMER7,TIMER_CH_0,6000);
     
-    timer2_pwm_config();
-    timer3_int_init();
+//    timer2_pwm_config();
+//    timer8_int_init();
     
     for(uint8_t i=0;i<3;i++)
     {
@@ -82,7 +82,7 @@ int main(void)
                 if(rec.val==1)
                 {
                     gpio_bit_set(GPIOE,GPIO_PIN_2);
-                    //buck_boost_en=1;
+                    buck_boost_en=1;
                 }
                 else if(rec.val==0)
                 {
