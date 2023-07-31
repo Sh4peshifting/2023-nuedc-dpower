@@ -41,14 +41,14 @@ int main(void)
     usart0_gpio_config(115200U);
     uart3_gpio_config(4800U);
     eg2104_sd_init();
-    buck_boost_init();
+    //buck_boost_init();
     
     AC_Para ac1info;
      
     
     timer1_set_pwm(700);
     
-
+    pfc_init();
     
 //    timer2_pwm_config();
 //    timer8_int_init();

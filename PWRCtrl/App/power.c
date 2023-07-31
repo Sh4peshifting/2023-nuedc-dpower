@@ -1,11 +1,17 @@
 #include "power.h"
 
 uint8_t buck_boost_en=0;
+uint16_t pfc_active_pwm=00;
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
+PID_STRUCT gPID_PFC_I_Loop; //pfc
+
+LOW_FILTER_STRUCT  lowfilter_vout_buckboost;
+LOW_FILTER_STRUCT  lowfilter_vout_pfc;
+
 /*定义校正参数                  x1*****y1*****x2*****y2*****y******a*********************b   */
 ELEC_INFO_STRUCT v_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数  
 ELEC_INFO_STRUCT i_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数 
-
+ELEC_INFO_STRUCT acv_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DP_VOLTAGE_OUT_RATIO, 0.00f}; //输出电压参数 
 
 
 /**
@@ -53,7 +59,7 @@ void zcd_init()
     
     gpio_mode_set(GPIOG,GPIO_MODE_INPUT,GPIO_PUPD_NONE,GPIO_PIN_6);
     nvic_irq_enable(EXTI5_9_IRQn,0U,0U);
-    syscfg_exti_line_config(EXTI_SOURCE_GPIOG,EXTI_SOURCE_PIN0);
+    syscfg_exti_line_config(EXTI_SOURCE_GPIOG,EXTI_SOURCE_PIN6);
 	/* 初始化中断线 */
 	exti_init(EXTI_6,EXTI_INTERRUPT,EXTI_TRIG_BOTH);
 	/* 使能中断 */
@@ -61,13 +67,26 @@ void zcd_init()
 	/* 清除中断标志位 */
 	exti_interrupt_flag_clear(EXTI_6);
     
+    rcu_periph_clock_enable(RCU_GPIOD);
+    rcu_periph_clock_enable(RCU_SYSCFG);
+    
+    gpio_mode_set(GPIOD,GPIO_MODE_INPUT,GPIO_PUPD_NONE,GPIO_PIN_3);
+    nvic_irq_enable(EXTI3_IRQn,0U,0U);
+    syscfg_exti_line_config(EXTI_SOURCE_GPIOD,EXTI_SOURCE_PIN3);
+	/* 初始化中断线 */
+	exti_init(EXTI_3,EXTI_INTERRUPT,EXTI_TRIG_BOTH);
+	/* 使能中断 */
+	exti_interrupt_enable(EXTI_3);
+	/* 清除中断标志位 */
+	exti_interrupt_flag_clear(EXTI_3);
+    
     
 }
 void buck_boost_init()
 {
     pwm_config();
     adc_config();
-    
+
     pid_func.reset(&gPID_VoltOutLoop);
     gPID_VoltOutLoop.T       = 0.50f;//PID控制周期，单位100us
     gPID_VoltOutLoop.Kp      = 5.0f;      
@@ -76,7 +95,30 @@ void buck_boost_init()
     gPID_VoltOutLoop.Ek_Dead = 0.01f;
     gPID_VoltOutLoop.OutMin  = 0.015f * DP_PWM_PER;//最小占空比
     gPID_VoltOutLoop.OutMax  = 1.80f * DP_PWM_PER;//最大占空比
-    pid_func.init(&gPID_VoltOutLoop);
+    pid_func.init(&gPID_VoltOutLoop); 
+
+	lowfilter_vout_buckboost.Fc  = 5e3; //截止频率为2KHZ
+    lowfilter_vout_buckboost.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lowfilter_vout_buckboost);     
+
+    
+}
+void pfc_init()
+{
+    timer3_pwm_config();
+    timer8_int_init();
+    zcd_init();
+    
+
+    pid_func.reset(&gPID_PFC_I_Loop);
+    gPID_PFC_I_Loop.T       = 0.50f;//PID控制周期，单位100us
+    gPID_PFC_I_Loop.Kp      = 5.0f;      
+    gPID_PFC_I_Loop.Ti      = 0.46f;
+    gPID_PFC_I_Loop.Td      = 0.01f;
+    gPID_PFC_I_Loop.Ek_Dead = 0.01f;
+    gPID_PFC_I_Loop.OutMin  = 0.015f * 2399;//最小占空比
+    gPID_PFC_I_Loop.OutMax  = 0.9f * 2399;//最大占空比
+    pid_func.init(&gPID_PFC_I_Loop);
     
 }
 void power_ctrl_buck_boost()
@@ -119,6 +161,12 @@ void power_ctrl_spwm()
 
 void power_ctrl_pfc()
 {
+    float pfc_i_in,pfc_v_out,pfc_v_in;
+    gPID_PFC_I_Loop.Ref = (26.0f-pfc_v_out)*pfc_v_in;
+    gPID_PFC_I_Loop.Fdb = pfc_i_in;
+    pid_func.calc(&gPID_PFC_I_Loop);
+    pfc_active_pwm=gPID_PFC_I_Loop.Output;
+    
 }
 void TIMER7_UP_TIMER12_IRQHandler()
 {
@@ -147,9 +195,36 @@ void EXTI5_9_IRQHandler()
 {
     if(exti_interrupt_flag_get(EXTI_6) == SET)
     {
-        
+        exti_interrupt_flag_clear(EXTI_6);
+        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        zcd_pfc_handler();
     }
 }
+
+void EXTI3_IRQHandler()
+{
+    if(exti_interrupt_flag_get(EXTI_3) == SET)
+    {
+        exti_interrupt_flag_clear(EXTI_3);
+        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        zcd_pfc_handler();
+    }
+}
+
+void zcd_pfc_handler()
+{
+    if(gpio_input_bit_get(GPIOD,GPIO_PIN_3)== SET)
+    {
+        timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_2,0);
+        timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_3,2399-pfc_active_pwm);
+    }
+    else
+    {
+        timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_2,2399-pfc_active_pwm);
+        timer_channel_output_pulse_value_config(TIMER3,TIMER_CH_3,0);
+    }
+}
+
 
 void timer1_set_pwm(uint16_t pwm_cmp_value)
 {
@@ -197,6 +272,8 @@ void timer1_set_pwm(uint16_t pwm_cmp_value)
 //  HRTIM1->sMasterRegs.MCMP2R  = ( DP_PWM_PER + buck_duty  ) >> 1;
 //  HRTIM1->sMasterRegs.MCMP3R  = ( DP_PWM_PER + boost_duty ) >> 1;
 //  HRTIM1->sMasterRegs.MCMP4R  = ( DP_PWM_PER - boost_duty ) >> 1;
-    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_0,DP_PWM_PER-buck_duty);
-    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_1,DP_PWM_PER-boost_duty);
+//  timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_0,DP_PWM_PER-buck_duty);
+//  timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_1,DP_PWM_PER-boost_duty);
+    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,DP_PWM_PER-buck_duty);
+    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,DP_PWM_PER-boost_duty);
 }
