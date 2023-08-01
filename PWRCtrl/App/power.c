@@ -1,18 +1,22 @@
 #include "power.h"
 
-uint8_t buck_boost_en=0;
+uint8_t buck_boost_en=0,pfc_en=0;
 uint16_t pfc_active_pwm=00;
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_PFC_I_Loop; //pfc
 
 LOW_FILTER_STRUCT  lpf_v_in1;
 LOW_FILTER_STRUCT  lpf_v_in2;
+LOW_FILTER_STRUCT  lpf_v_in3;
+LOW_FILTER_STRUCT  lpf_v_in4;
 LOW_FILTER_STRUCT  lpf_i_in1;
 LOW_FILTER_STRUCT  lpf_i_in2;
 LOW_FILTER_STRUCT  lpf_i_in3;
 /*定义校正参数                    x1*****y1*****x2*****y2*****y******a*********************b   */
 ELEC_INFO_STRUCT v_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
 ELEC_INFO_STRUCT v_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+ELEC_INFO_STRUCT v_in3 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
+ELEC_INFO_STRUCT v_in4 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
 ELEC_INFO_STRUCT i_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
 ELEC_INFO_STRUCT i_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
 ELEC_INFO_STRUCT i_in3 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
@@ -117,12 +121,12 @@ void pfc_init()
 
     pid_func.reset(&gPID_PFC_I_Loop);
     gPID_PFC_I_Loop.T       = 0.50f;//PID控制周期，单位100us
-    gPID_PFC_I_Loop.Kp      = 5.0f;      
-    gPID_PFC_I_Loop.Ti      = 0.46f;
+    gPID_PFC_I_Loop.Kp      = 0.5f;      
+    gPID_PFC_I_Loop.Ti      = 0.20f;
     gPID_PFC_I_Loop.Td      = 0.01f;
     gPID_PFC_I_Loop.Ek_Dead = 0.01f;
     gPID_PFC_I_Loop.OutMin  = 0.015f * TIMER_CAR(TIMER3);//最小占空比
-    gPID_PFC_I_Loop.OutMax  = 0.9f * TIMER_CAR(TIMER3);//最大占空比
+    gPID_PFC_I_Loop.OutMax  = 0.5f * TIMER_CAR(TIMER3);//最大占空比
     pid_func.init(&gPID_PFC_I_Loop);
     
 }
@@ -167,10 +171,22 @@ void power_ctrl_spwm()
 void power_ctrl_pfc()
 {
     float pfc_i_in,pfc_v_out,pfc_v_in;
-    gPID_PFC_I_Loop.Ref = (26.0f-pfc_v_out)*pfc_v_in;
+    pfc_i_in=i_in1.Value;
+    pfc_v_out=v_in3.Value;
+    if(gpio_input_bit_get(GPIOD,GPIO_PIN_3)==SET)
+    {
+        pfc_v_in=v_in1.Value;
+    }
+    else
+    {
+        pfc_v_in=v_in2.Value;
+    }
+    
+    gPID_PFC_I_Loop.Ref = (10.0f-pfc_v_out)*pfc_v_in*0.1;
     gPID_PFC_I_Loop.Fdb = pfc_i_in;
     pid_func.calc(&gPID_PFC_I_Loop);
     pfc_active_pwm=gPID_PFC_I_Loop.Output;
+    pfc_active_pwm=(1-(pfc_v_in/7.f))*500;
     
 }
 void TIMER7_UP_TIMER12_IRQHandler()
@@ -181,6 +197,11 @@ void TIMER7_UP_TIMER12_IRQHandler()
         if(buck_boost_en==1)
         {
            power_ctrl_buck_boost();
+        }
+        adc_value_process();
+        if(pfc_en==1)
+        {
+            power_ctrl_pfc();
         }
         gpio_bit_toggle(GPIOE,GPIO_PIN_4);
     }
@@ -211,7 +232,7 @@ void EXTI3_IRQHandler()
     if(exti_interrupt_flag_get(EXTI_3) == SET)
     {
         exti_interrupt_flag_clear(EXTI_3);
-        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        //gpio_bit_toggle(GPIOE,GPIO_PIN_4);
         zcd_pfc_handler();
     }
 }
@@ -234,12 +255,24 @@ void adc_value_process()
 {
     lpf_v_in1.Input=(adc0_value[0]*v_in1.Coeff)+v_in1.Offset;
     lpf_v_in2.Input=(adc0_value[1]*v_in2.Coeff)+v_in2.Offset;
-    lpf_i_in1.Input=(adc0_value[4]*i_in1.Coeff)+i_in1.Offset;
-    lpf_i_in2.Input=(adc0_value[5]*i_in2.Coeff)+i_in2.Offset;
-    lpf_i_in3.Input=(adc0_value[6]*i_in3.Coeff)+i_in3.Offset;
+    lpf_v_in3.Input=(adc0_value[2]*v_in3.Coeff)+v_in3.Offset;
+    lpf_v_in4.Input=(adc0_value[3]*v_in4.Coeff)+v_in4.Offset;
+    lpf_i_in1.Input=(adc0_value[4]-(float)2048)*i_in1.Coeff+i_in1.Offset;
+    lpf_i_in2.Input=(adc0_value[5]-(float)2048)*i_in2.Coeff+i_in2.Offset;
+    lpf_i_in3.Input=(adc0_value[6]-(float)2048)*i_in3.Coeff+i_in3.Offset;
+    
+    low_filter_calc(&lpf_v_in1);
+    low_filter_calc(&lpf_v_in2);
+    low_filter_calc(&lpf_v_in3);
+    low_filter_calc(&lpf_v_in4);
+    low_filter_calc(&lpf_i_in1);
+    low_filter_calc(&lpf_i_in2);
+    low_filter_calc(&lpf_i_in3);
     
     v_in1.Value=lpf_v_in1.Output;
     v_in2.Value=lpf_v_in2.Output;
+    v_in3.Value=lpf_v_in3.Output;
+    v_in4.Value=lpf_v_in4.Output;
     i_in1.Value=lpf_i_in1.Output;
     i_in2.Value=lpf_i_in2.Output;
     i_in3.Value=lpf_i_in3.Output;
@@ -255,7 +288,14 @@ void power_info_init()
     lpf_v_in2.Fc  = 5e3; //截止频率为2KHZ
     lpf_v_in2.Fs  = 12.5e3;//采样频率为25KHZ
     low_filter_init(&lpf_v_in2);
-
+    
+    lpf_v_in3.Fc  = 5e3; //截止频率为5KHZ
+    lpf_v_in3.Fs  = 12.5e3;//采样频率为1.25KHZ
+    low_filter_init(&lpf_v_in3);   
+    
+    lpf_v_in4.Fc  = 5e3; //截止频率为2KHZ
+    lpf_v_in4.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lpf_v_in4);
     
     lpf_i_in1.Fc  = 5e3; //截止频率为2KHZ
     lpf_i_in1.Fs  = 12.5e3;//采样频率为25KHZ

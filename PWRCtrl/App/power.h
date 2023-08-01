@@ -17,15 +17,15 @@
 #define MIN_PWM_CMP   (uint16_t)(0.05F * TIMER_CAR(TIMER1)) //PWM最小比较值
 
 /*para by hizrd*/
-#define CURRENT_RATIO   (50.00f/4095)  //输出电流比例 3.3/0.005/20 = 33.00
+#define CURRENT_RATIO   (25.00f/4095)  //输出电流比例 3.3/0.005/20 = 33.00
 #define DC_VOLTAGE_RETIO    (66.f/4095)  //输入电压比例
 #define AC_VOLTAGE_RETIO    (-66.f/4095)  //输入电压比例
 #define ADC_I_OFFSET        2048L         //电流采样的1.65V偏移电压对应的ADC采样值
 #define ADC_ACV_OFFSET        2048L         //电流采样的1.65V偏移电压对应的ADC采样值
 
-extern uint8_t buck_boost_en;
+extern uint8_t buck_boost_en,pfc_en;
 extern AC_Para ac1info;
-
+extern ELEC_INFO_STRUCT v_in1 ,v_in2,v_in3,v_in4,i_in1,i_in2,i_in3;
 void dp_ElecLineCorr(ELEC_INFO_STRUCT *p);
 void power_ctrl_buck_boost(void);
 void eg2104_sd_init(void);

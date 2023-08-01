@@ -6,7 +6,7 @@ void adc_gpio_config()
 {
     rcu_periph_clock_enable(RCU_GPIOA);
     /* config the GPIO as analog mode, for ADC */
-    gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_5 | GPIO_PIN_6);
+    gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4);
     rcu_periph_clock_enable(RCU_GPIOC);
     gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_5);//in15
     rcu_periph_clock_enable(RCU_GPIOB);
@@ -56,8 +56,8 @@ void adc_config()
     /* ADC routine channel config */
     adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_1, ADC_SAMPLETIME_56);//pa1
     adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_2, ADC_SAMPLETIME_56);//pa2
-    adc_regular_channel_config(ADC0, 2, ADC_CHANNEL_5, ADC_SAMPLETIME_56);
-    adc_regular_channel_config(ADC0, 3, ADC_CHANNEL_6, ADC_SAMPLETIME_56);
+    adc_regular_channel_config(ADC0, 2, ADC_CHANNEL_3, ADC_SAMPLETIME_56);//pa3
+    adc_regular_channel_config(ADC0, 3, ADC_CHANNEL_4, ADC_SAMPLETIME_56);//pa4
     adc_regular_channel_config(ADC0, 4, ADC_CHANNEL_15,ADC_SAMPLETIME_56);//pc5
     adc_regular_channel_config(ADC0, 5, ADC_CHANNEL_8, ADC_SAMPLETIME_56);//pb0
     adc_regular_channel_config(ADC0, 6, ADC_CHANNEL_9, ADC_SAMPLETIME_56);//pb1

@@ -44,12 +44,11 @@ int main(void)
     
     usart0_gpio_config(115200U);
     uart3_gpio_config(4800U);
-    
+    power_info_init();
     eg2104_sd_init();
     
-    //buck_boost_init();
+    buck_boost_init();
     timer1_set_pwm(700);
-    
     pfc_init();
     
 //    timer2_pwm_config();
@@ -96,18 +95,25 @@ void task_hmi_rx()
         if(rec.val==1)
         {
             gpio_bit_set(GPIOE,GPIO_PIN_2);
-            buck_boost_en=1;
+            //buck_boost_en=1;
+            pfc_en=1;
         }
         else if(rec.val==0)
         {
             gpio_bit_reset(GPIOE,GPIO_PIN_2);
             buck_boost_en=0;
+            pfc_en=0;
         }
     }
 }
 void task_hmi_tx()
 {
-    send_two_decimal("voltage",(float)adc0_value[0]*3.3f/4096.f*20);
+    send_two_decimal("voltage",v_in3.Value);
+    send_two_decimal("current",v_in4.Value);
+    send_two_decimal("V_IN1",v_in1.Value);
+    send_two_decimal("V_IN2",v_in2.Value);
+    send_two_decimal("I_IN1",i_in1.Value);
+    send_two_decimal("I_IN2",i_in2.Value);
 }
 void task_hlw8032()
 {
