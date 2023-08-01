@@ -1,3 +1,4 @@
 /PWRCtrl/Project/Objects/*
 /PWRCtrl/Project/Listings/*
-/PWRCtrl/Project/.vscode/
+/PWRCtrl/Project/.vscode/*
+.vscode/*
