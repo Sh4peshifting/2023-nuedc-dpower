@@ -1,12 +1,16 @@
 #include "power_adc.h"
 
-volatile uint32_t adc0_value[6];
+volatile uint32_t adc0_value[10];
 
 void adc_gpio_config()
 {
     rcu_periph_clock_enable(RCU_GPIOA);
     /* config the GPIO as analog mode, for ADC */
     gpio_mode_set(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_5 | GPIO_PIN_6);
+    rcu_periph_clock_enable(RCU_GPIOC);
+    gpio_mode_set(GPIOC, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_5);//in15
+    rcu_periph_clock_enable(RCU_GPIOB);
+    gpio_mode_set(GPIOB, GPIO_MODE_ANALOG, GPIO_PUPD_NONE,GPIO_PIN_0|GPIO_PIN_1);//in8 in9
 }
 
 void adc_config()
@@ -28,7 +32,7 @@ void adc_config()
     dma_single_data_parameter.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
     dma_single_data_parameter.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
     dma_single_data_parameter.direction = DMA_PERIPH_TO_MEMORY;
-    dma_single_data_parameter.number = 4;
+    dma_single_data_parameter.number = 7;
     dma_single_data_parameter.priority = DMA_PRIORITY_HIGH;
     dma_single_data_mode_init(DMA1, DMA_CH0, &dma_single_data_parameter);
     dma_channel_subperipheral_select(DMA1, DMA_CH0, DMA_SUBPERI0);
@@ -48,12 +52,15 @@ void adc_config()
     adc_data_alignment_config(ADC0, ADC_DATAALIGN_RIGHT);
 
     /* ADC channel length config */
-    adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, 4);
+    adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, 7);
     /* ADC routine channel config */
-    adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_1, ADC_SAMPLETIME_56);
-    adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_2, ADC_SAMPLETIME_56);
+    adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_1, ADC_SAMPLETIME_56);//pa1
+    adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_2, ADC_SAMPLETIME_56);//pa2
     adc_regular_channel_config(ADC0, 2, ADC_CHANNEL_5, ADC_SAMPLETIME_56);
     adc_regular_channel_config(ADC0, 3, ADC_CHANNEL_6, ADC_SAMPLETIME_56);
+    adc_regular_channel_config(ADC0, 4, ADC_CHANNEL_15,ADC_SAMPLETIME_56);//pc5
+    adc_regular_channel_config(ADC0, 5, ADC_CHANNEL_8, ADC_SAMPLETIME_56);//pb0
+    adc_regular_channel_config(ADC0, 6, ADC_CHANNEL_9, ADC_SAMPLETIME_56);//pb1
     /* ADC trigger config */
     adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_T7_TRGO);
     adc_external_trigger_config(ADC0, ADC_REGULAR_CHANNEL, EXTERNAL_TRIGGER_RISING);

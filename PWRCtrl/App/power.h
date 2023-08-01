@@ -34,4 +34,6 @@ void buck_boost_init(void);
 void zcd_init(void);
 void zcd_pfc_handler(void);
 void pfc_init(void);
+void adc_value_process(void);
+void power_info_init(void);
 #endif 

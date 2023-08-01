@@ -5,15 +5,19 @@ uint16_t pfc_active_pwm=00;
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_PFC_I_Loop; //pfc
 
-LOW_FILTER_STRUCT  lowfilter_vout_buckboost;
-LOW_FILTER_STRUCT  lowfilter_vout_pfc;
-LOW_FILTER_STRUCT  lowfilter_acin1_pfc;
-LOW_FILTER_STRUCT  lowfilter_acin2_pfc;
-LOW_FILTER_STRUCT  lowfilter_iin_pfc;
+LOW_FILTER_STRUCT  lpf_v_in1;
+LOW_FILTER_STRUCT  lpf_v_in2;
+LOW_FILTER_STRUCT  lpf_i_in1;
+LOW_FILTER_STRUCT  lpf_i_in2;
+LOW_FILTER_STRUCT  lpf_i_in3;
 /*定义校正参数                    x1*****y1*****x2*****y2*****y******a*********************b   */
-ELEC_INFO_STRUCT v_in1_struct =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
-ELEC_INFO_STRUCT i_in1_struct =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
-ELEC_INFO_STRUCT acv_in1_struct = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+ELEC_INFO_STRUCT v_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
+ELEC_INFO_STRUCT v_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+ELEC_INFO_STRUCT i_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
+ELEC_INFO_STRUCT i_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
+ELEC_INFO_STRUCT i_in3 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
+ELEC_INFO_STRUCT acv_in1 = {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+
 
 AC_Para ac1info;
 
@@ -100,9 +104,7 @@ void buck_boost_init()
     gPID_VoltOutLoop.OutMax  = 1.80f * DP_PWM_PER;//最大占空比
     pid_func.init(&gPID_VoltOutLoop); 
 
-	lowfilter_vout_buckboost.Fc  = 5e3; //截止频率为2KHZ
-    lowfilter_vout_buckboost.Fs  = 12.5e3;//采样频率为25KHZ
-    low_filter_init(&lowfilter_vout_buckboost);     
+  
 
     
 }
@@ -228,7 +230,46 @@ void zcd_pfc_handler()
     }
 }
 
+void adc_value_process()
+{
+    lpf_v_in1.Input=(adc0_value[0]*v_in1.Coeff)+v_in1.Offset;
+    lpf_v_in2.Input=(adc0_value[1]*v_in2.Coeff)+v_in2.Offset;
+    lpf_i_in1.Input=(adc0_value[4]*i_in1.Coeff)+i_in1.Offset;
+    lpf_i_in2.Input=(adc0_value[5]*i_in2.Coeff)+i_in2.Offset;
+    lpf_i_in3.Input=(adc0_value[6]*i_in3.Coeff)+i_in3.Offset;
+    
+    v_in1.Value=lpf_v_in1.Output;
+    v_in2.Value=lpf_v_in2.Output;
+    i_in1.Value=lpf_i_in1.Output;
+    i_in2.Value=lpf_i_in2.Output;
+    i_in3.Value=lpf_i_in3.Output;
+    
+}
 
+void power_info_init()
+{
+    lpf_v_in1.Fc  = 5e3; //截止频率为5KHZ
+    lpf_v_in1.Fs  = 12.5e3;//采样频率为1.25KHZ
+    low_filter_init(&lpf_v_in1);   
+    
+    lpf_v_in2.Fc  = 5e3; //截止频率为2KHZ
+    lpf_v_in2.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lpf_v_in2);
+
+    
+    lpf_i_in1.Fc  = 5e3; //截止频率为2KHZ
+    lpf_i_in1.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lpf_i_in1);
+    
+    lpf_i_in2.Fc  = 5e3; //截止频率为2KHZ
+    lpf_i_in2.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lpf_i_in2);
+    
+    lpf_i_in3.Fc  = 5e3; //截止频率为2KHZ
+    lpf_i_in3.Fs  = 12.5e3;//采样频率为25KHZ
+    low_filter_init(&lpf_i_in3);
+    
+}
 void timer1_set_pwm(uint16_t pwm_cmp_value)
 {
     uint16_t buck_duty  = 0;
