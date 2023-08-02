@@ -2,6 +2,8 @@
 
 uint8_t buck_boost_en=0,pfc_en=0;
 uint16_t pfc_active_pwm=00;
+uint16_t cnt_spwm=0;
+
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_PFC_I_Loop; //pfc
 
@@ -85,7 +87,7 @@ void zcd_init()
     nvic_irq_enable(EXTI3_IRQn,0U,0U);
     syscfg_exti_line_config(EXTI_SOURCE_GPIOD,EXTI_SOURCE_PIN3);
 	/* 初始化中断线 */
-	exti_init(EXTI_3,EXTI_INTERRUPT,EXTI_TRIG_BOTH);
+	exti_init(EXTI_3,EXTI_INTERRUPT,EXTI_TRIG_RISING);//attention!!!!!!!!!
 	/* 使能中断 */
 	exti_interrupt_enable(EXTI_3);
 	/* 清除中断标志位 */
@@ -141,29 +143,28 @@ void power_ctrl_buck_boost()
 /*以 10KHz调用这个函数，以调制单极性SPWM*/
 void power_ctrl_spwm()
 {
-
-    static uint16_t count=0;
-    if(count==0)
+ 
+    if(cnt_spwm==0)
     {
         timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,0);
     }
-    if(count<100)
+    if(cnt_spwm<100)
     {
-        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)count/200*_2PI)*TIMER_CAR(TIMER2)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)cnt_spwm/200*_2PI)*TIMER_CAR(TIMER2)));
     }
-    if(count==100)
+    if(cnt_spwm==100)
     {
         timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,0);
     
     }
-    if(count >=100)
+    if(cnt_spwm >=100)
     {       
-        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,(uint16_t)(_sin((float)(count-100)/200*_2PI)*TIMER_CAR(TIMER2)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,(uint16_t)(_sin((float)(cnt_spwm-100)/200*_2PI)*TIMER_CAR(TIMER2)));
     }
-    count++;
-    if(count==200)
+    cnt_spwm++;
+    if(cnt_spwm==200)
     {
-        count=0;
+        cnt_spwm=0;
     }
     
 }
@@ -182,7 +183,7 @@ void power_ctrl_pfc()
         pfc_v_in=v_in2.Value;
     }
     
-    gPID_PFC_I_Loop.Ref = (10.0f-pfc_v_out)*pfc_v_in*0.1;
+    gPID_PFC_I_Loop.Ref = (10.0f-pfc_v_out)*pfc_v_in*0.1f;
     gPID_PFC_I_Loop.Fdb = pfc_i_in;
     pid_func.calc(&gPID_PFC_I_Loop);
     pfc_active_pwm=gPID_PFC_I_Loop.Output;
@@ -209,11 +210,11 @@ void TIMER7_UP_TIMER12_IRQHandler()
 
 void TIMER0_BRK_TIMER8_IRQHandler()
 {
-     if(timer_flag_get(TIMER3,TIMER_FLAG_UP) == SET )
+     if(timer_flag_get(TIMER8,TIMER_FLAG_UP) == SET )
     {
-        timer_flag_clear(TIMER3,TIMER_FLAG_UP);
+        timer_flag_clear(TIMER8,TIMER_FLAG_UP);
         power_ctrl_spwm();
-        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        //gpio_bit_toggle(GPIOE,GPIO_PIN_4);
     }
 }
 /*ZCD中断*/
@@ -222,7 +223,7 @@ void EXTI5_9_IRQHandler()
     if(exti_interrupt_flag_get(EXTI_6) == SET)
     {
         exti_interrupt_flag_clear(EXTI_6);
-        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        //gpio_bit_toggle(GPIOE,GPIO_PIN_4);
         zcd_pfc_handler();
     }
 }
@@ -232,8 +233,9 @@ void EXTI3_IRQHandler()
     if(exti_interrupt_flag_get(EXTI_3) == SET)
     {
         exti_interrupt_flag_clear(EXTI_3);
-        //gpio_bit_toggle(GPIOE,GPIO_PIN_4);
-        zcd_pfc_handler();
+        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
+        cnt_spwm=0;
+        //zcd_pfc_handler();
     }
 }
 

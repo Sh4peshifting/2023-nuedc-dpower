@@ -2,7 +2,7 @@
 
 void timer8_int_init()
 {
-    rcu_periph_clock_enable(RCU_TIMER3);
+    rcu_periph_clock_enable(RCU_TIMER8);
     
     timer_parameter_struct timere_initpara; 
     
@@ -15,7 +15,7 @@ void timer8_int_init()
 	//timere_initpara.repetitioncounter = 0;                  // 重复计数器 0-255  
 	timer_init(TIMER8,&timere_initpara);							// 初始化定时器
     
-    nvic_irq_enable(TIMER3_IRQn, 0, 1);
+    nvic_irq_enable(TIMER0_BRK_TIMER8_IRQn, 0, 1);
     timer_interrupt_enable(TIMER8,TIMER_INT_UP);
     
     timer_enable(TIMER8);

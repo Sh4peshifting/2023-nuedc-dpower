@@ -170,11 +170,11 @@ void timer2_pwm_config()
     timer_channel_output_config(TIMER2,TIMER_CH_1,&timer_ocintpara);
     
     timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,0);// 配置定时器通道输出脉冲值
-	timer_channel_output_mode_config(TIMER2,TIMER_CH_0,TIMER_OC_MODE_PWM1);	// 配置定时器通道输出比较模式
+	timer_channel_output_mode_config(TIMER2,TIMER_CH_0,TIMER_OC_MODE_PWM0);	// 配置定时器通道输出比较模式
 	timer_channel_output_shadow_config(TIMER2,TIMER_CH_0,TIMER_OC_SHADOW_DISABLE);// 配置定时器通道输出影子寄存器
 
     timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,0);									// 配置定时器通道输出脉冲值
-	timer_channel_output_mode_config(TIMER2,TIMER_CH_1,TIMER_OC_MODE_PWM1);				// 配置定时器通道输出比较模式
+	timer_channel_output_mode_config(TIMER2,TIMER_CH_1,TIMER_OC_MODE_PWM0);				// 配置定时器通道输出比较模式
 	timer_channel_output_shadow_config(TIMER2,TIMER_CH_1,TIMER_OC_SHADOW_DISABLE);// 配置定时器通道输出影子寄存器
     
     timer_auto_reload_shadow_enable(TIMER2);

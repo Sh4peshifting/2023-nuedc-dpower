@@ -47,13 +47,13 @@ int main(void)
     power_info_init();
     eg2104_sd_init();
     
-    buck_boost_init();
+    //buck_boost_init();
     timer1_set_pwm(700);
-    pfc_init();
+    //pfc_init();
     
-//    timer2_pwm_config();
-//    timer8_int_init();
-    
+    timer2_pwm_config();
+    timer8_int_init();
+    zcd_init();
     for(uint8_t i=0;i<3;i++)
     {
         beep(100);
