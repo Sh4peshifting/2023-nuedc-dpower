@@ -43,7 +43,7 @@ void pwm_config()
 	/* 配置占空比 */
     /*buck ch*/
 	timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,0);// 配置定时器通道输出脉冲值
-	timer_channel_output_mode_config(TIMER1,TIMER_CH_2,TIMER_OC_MODE_PWM1);	// 配置定时器通道输出比较模式
+	timer_channel_output_mode_config(TIMER1,TIMER_CH_2,TIMER_OC_MODE_PWM0);	// 配置定时器通道输出比较模式
 	timer_channel_output_shadow_config(TIMER1,TIMER_CH_2,TIMER_OC_SHADOW_DISABLE);// 配置定时器通道输出影子寄存器
     /*boost ch*/
 //  timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,0);									// 配置定时器通道输出脉冲值

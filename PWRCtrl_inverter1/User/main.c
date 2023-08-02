@@ -52,7 +52,7 @@ int main(void)
     //pfc_init();
     timer2_pwm_config();//spwm
     timer8_int_init();//10K
-    zcd_init();
+    //zcd_init();
     timer11_int_init();//200Hz
     
     for(uint8_t i=0;i<3;i++)
@@ -61,7 +61,7 @@ int main(void)
         delay_1ms(200);
     }
     
-
+    //timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,1300);
     while(1) 
     {
 		if(uart3_complete_flag == 1)
@@ -96,20 +96,24 @@ void task_hmi_rx()
         if(rec.val==1)
         {
             gpio_bit_set(GPIOE,GPIO_PIN_2);
-            //buck_boost_en=1;
+            gpio_bit_set(GPIOE,GPIO_PIN_5);
+            buck_boost_en=1;
+            acv_loop_en=1;
             pfc_en=1;
         }
         else if(rec.val==0)
         {
             gpio_bit_reset(GPIOE,GPIO_PIN_2);
+            gpio_bit_reset(GPIOE,GPIO_PIN_5);
             buck_boost_en=0;
+            acv_loop_en=0;
             pfc_en=0;
         }
     }
 }
 void task_hmi_tx()
 {
-    send_two_decimal("voltage",v_in3.Value);
+    send_two_decimal("voltage",vp_inverter);
     send_two_decimal("current",v_in4.Value);
     send_two_decimal("V_IN1",v_in1.Value);
     send_two_decimal("V_IN2",v_in2.Value);

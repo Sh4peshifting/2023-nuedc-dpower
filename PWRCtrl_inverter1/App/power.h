@@ -23,8 +23,8 @@
 #define ADC_I_OFFSET        2048L         //电流采样的1.65V偏移电压对应的ADC采样值
 #define ADC_ACV_OFFSET        2048L         //电流采样的1.65V偏移电压对应的ADC采样值
 
-extern uint8_t buck_boost_en,pfc_en;
-extern float v_buck;
+extern uint8_t buck_boost_en,pfc_en,acv_loop_en;
+extern float v_buck,vp_inverter;
 extern AC_Para ac1info;
 extern ELEC_INFO_STRUCT v_in1 ,v_in2,v_in3,v_in4,i_in1,i_in2,i_in3;
 void dp_ElecLineCorr(ELEC_INFO_STRUCT *p);
@@ -38,4 +38,6 @@ void pfc_init(void);
 void adc_value_process(void);
 void power_info_init(void);
 void power_ctrl_ACcurrent(void);
+void power_ctrl_ACvoltage(void);
+
 #endif 

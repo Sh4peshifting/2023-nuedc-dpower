@@ -1,12 +1,13 @@
 #include "power.h"
 
-uint8_t buck_boost_en=0,pfc_en=0,inverter_en=0;
+uint8_t buck_boost_en=0,pfc_en=0,inverter_en=0,aci_loop_en=0,acv_loop_en=0;
 uint16_t pfc_active_pwm=00;
 uint16_t cnt_spwm=0;
-float v_buck=20,i_acout=0;
+float v_buck=12,i_acout=0,vp_inverter=15,v_inverter_out;
 
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_CurrentOutLoop; //输出电压环PID数据
+PID_STRUCT gPID_ACVOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_PFC_I_Loop; //pfc
 
 LOW_FILTER_STRUCT  lpf_v_in1;
@@ -89,7 +90,7 @@ void zcd_init()
     nvic_irq_enable(EXTI3_IRQn,0U,0U);
     syscfg_exti_line_config(EXTI_SOURCE_GPIOD,EXTI_SOURCE_PIN3);
 	/* 初始化中断线 */
-	exti_init(EXTI_3,EXTI_INTERRUPT,EXTI_TRIG_RISING);//attention!!!!!!!!!
+	exti_init(EXTI_3,EXTI_INTERRUPT,EXTI_TRIG_RISING);//仅上升沿检测attention!!!!!!!!!
 	/* 使能中断 */
 	exti_interrupt_enable(EXTI_3);
 	/* 清除中断标志位 */
@@ -104,8 +105,8 @@ void buck_boost_init()
 
     pid_func.reset(&gPID_VoltOutLoop);
     gPID_VoltOutLoop.T       = 0.50f;//PID控制周期，单位100us
-    gPID_VoltOutLoop.Kp      = 5.0f;      
-    gPID_VoltOutLoop.Ti      = 0.46f;
+    gPID_VoltOutLoop.Kp      = 4.0f;      
+    gPID_VoltOutLoop.Ti      = 0.53f;
     gPID_VoltOutLoop.Td      = 0.01f;
     gPID_VoltOutLoop.Ek_Dead = 0.01f;
     gPID_VoltOutLoop.OutMin  = 0.03f * DP_PWM_PER;//最小占空比
@@ -121,6 +122,17 @@ void buck_boost_init()
     gPID_CurrentOutLoop.OutMin  = 20.0f;//最小电压
     gPID_CurrentOutLoop.OutMax  = 30.0f;//最大电压
     pid_func.init(&gPID_CurrentOutLoop);
+    
+    pid_func.reset(&gPID_ACVOutLoop);
+    gPID_ACVOutLoop.T       = 50000.0f;//PID控制周期，单位100us
+    gPID_ACVOutLoop.Kp      = 0.00001f;      
+    gPID_ACVOutLoop.Ti      = 2.0f;
+    gPID_ACVOutLoop.Td      = 0.01f;
+    gPID_ACVOutLoop.Ek_Dead = 0.01f;
+    gPID_ACVOutLoop.OutMin  = 10.0f;//最小电压
+    gPID_ACVOutLoop.OutMax  = 22.0f;//最大电压
+    pid_func.init(&gPID_ACVOutLoop); 
+    
 
     
 }
@@ -152,21 +164,26 @@ void pfc_init()
 //}
 void power_ctrl_buck()
 {
-    gPID_VoltOutLoop.Ref = 12.f;
+    gPID_VoltOutLoop.Ref = v_buck;//12.f;
     gPID_VoltOutLoop.Fdb = v_in1.Value;
     pid_func.calc( &gPID_VoltOutLoop );
-    timer1_set_pwm(gPID_VoltOutLoop.Output); 
-    
+    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,gPID_VoltOutLoop.Output);
 }
 
 void power_ctrl_ACcurrent()
 {
     gPID_CurrentOutLoop.Ref=i_acout;
-    gPID_CurrentOutLoop.Fdb=22;
+    gPID_CurrentOutLoop.Fdb=ac1info.I;
     pid_func.calc(&gPID_CurrentOutLoop);
     v_buck=gPID_CurrentOutLoop.Output;
 }
-
+void power_ctrl_ACvoltage()
+{
+    gPID_ACVOutLoop.Ref=10;//v_inverter_out;
+    gPID_ACVOutLoop.Fdb=vp_inverter/_SQRT2;
+    pid_func.calc(&gPID_ACVOutLoop);
+    v_buck=gPID_ACVOutLoop.Output;
+}
 /*以 10KHz调用这个函数，以调制单极性SPWM*/
 void power_ctrl_spwm()
 {
@@ -174,6 +191,7 @@ void power_ctrl_spwm()
     {
         timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,0);
     }
+    if(cnt_spwm==50) vp_inverter=v_in2.Value;//待修改！！！！！！！！！！！！！！
     if(cnt_spwm<100)
     {
         timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)cnt_spwm/200*_2PI)*TIMER_CAR(TIMER2)));
@@ -216,16 +234,17 @@ void power_ctrl_spwm()
 //    pfc_active_pwm=(1-(pfc_v_in/7.f))*500;
 //    
 //}
-void TIMER7_UP_TIMER12_IRQHandler()
+void TIMER7_UP_TIMER12_IRQHandler()//1.25K
 {
     if(timer_flag_get(TIMER7,TIMER_FLAG_UP) == SET )
     {
         timer_flag_clear(TIMER7,TIMER_FLAG_UP);
         adc_value_process();
+        if(buck_boost_en==1)power_ctrl_buck();
     }
 }
 
-void TIMER0_BRK_TIMER8_IRQHandler()
+void TIMER0_BRK_TIMER8_IRQHandler()//10K
 {
     if(timer_flag_get(TIMER8,TIMER_FLAG_UP) == SET )
     {
@@ -234,12 +253,14 @@ void TIMER0_BRK_TIMER8_IRQHandler()
     }
 }
 
-void TIMER7_BRK_TIMER11_IRQHandler()
+void TIMER7_BRK_TIMER11_IRQHandler()//0.2K
 {
     if(timer_flag_get(TIMER11,TIMER_FLAG_UP) == SET )
     {
         timer_flag_clear(TIMER11,TIMER_FLAG_UP);
-        power_ctrl_ACcurrent();
+        gpio_bit_toggle(GPIOE,GPIO_PIN_6);
+        if(aci_loop_en==1) power_ctrl_ACcurrent();
+        if(acv_loop_en==1) power_ctrl_ACvoltage();
     }
 }
 /*ZCD中断*/
