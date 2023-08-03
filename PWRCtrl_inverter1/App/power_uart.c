@@ -83,7 +83,7 @@ void USART0_IRQHandler()
 
 void UART3_IRQHandler()
 {
-    if(usart_interrupt_flag_get(UART3,USART_INT_FLAG_RBNE) == SET||uart3_complete_flag == 0)   // 接收缓冲区不为空
+    if(usart_interrupt_flag_get(UART3,USART_INT_FLAG_RBNE) == SET)   // 接收缓冲区不为空
 	{
 		uart3_buff[uart3_buff_len++] = usart_data_receive(UART3);// 把接收到的数据放到缓冲区中
 	}
@@ -128,7 +128,7 @@ void uart3_gpio_config(uint32_t band_rate)
 	usart_receive_config(UART3,USART_RECEIVE_ENABLE);    // 使能串口接收
 	
 	/* 中断配置 */
-	nvic_irq_enable(UART3_IRQn, 2, 2); 									 // 配置中断优先级
+	nvic_irq_enable(UART3_IRQn, 0, 2); 									 // 配置中断优先级
     usart_interrupt_enable(UART3,USART_INT_RBNE);				 // 读数据缓冲区非空中断和溢出错误中断
 	usart_interrupt_enable(UART3,USART_INT_IDLE);				 // 空闲检测中断
 }

@@ -3,7 +3,7 @@
 uint8_t buck_boost_en=0,pfc_en=0,inverter_en=0,aci_loop_en=0,acv_loop_en=0;
 uint16_t pfc_active_pwm=00;
 uint16_t cnt_spwm=0;
-float v_buck=12,i_acout=0,vp_inverter=15,v_inverter_out;
+float v_buck=24.f,i_acout=0.7f,vp_inverter=15,v_inverter_out,ip_inverter,i_spwm_ratio=1;
 
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_CurrentOutLoop; //输出电压环PID数据
@@ -115,12 +115,12 @@ void buck_boost_init()
 
   	pid_func.reset(&gPID_CurrentOutLoop);
     gPID_CurrentOutLoop.T       = 0.40f;//PID控制周期，单位100us
-    gPID_CurrentOutLoop.Kp      = 20.5f;
-    gPID_CurrentOutLoop.Ti      = 0.50f;
+    gPID_CurrentOutLoop.Kp      = 20.00f;
+    gPID_CurrentOutLoop.Ti      = 0.5f;
     gPID_CurrentOutLoop.Td      = 0.01f;
     gPID_CurrentOutLoop.Ek_Dead = 0.01f;
-    gPID_CurrentOutLoop.OutMin  = 20.0f;//最小电压
-    gPID_CurrentOutLoop.OutMax  = 30.0f;//最大电压
+    gPID_CurrentOutLoop.OutMin  = 0.03f * DP_PWM_PER;//最小
+    gPID_CurrentOutLoop.OutMax  = 0.90f * DP_PWM_PER;//最大
     pid_func.init(&gPID_CurrentOutLoop);
     
     pid_func.reset(&gPID_ACVOutLoop);
@@ -130,7 +130,7 @@ void buck_boost_init()
     gPID_ACVOutLoop.Td      = 0.01f;
     gPID_ACVOutLoop.Ek_Dead = 0.01f;
     gPID_ACVOutLoop.OutMin  = 10.0f;//最小电压
-    gPID_ACVOutLoop.OutMax  = 22.0f;//最大电压
+    gPID_ACVOutLoop.OutMax  = 30.0f;//最大电压
     pid_func.init(&gPID_ACVOutLoop); 
     
 
@@ -172,14 +172,28 @@ void power_ctrl_buck()
 
 void power_ctrl_ACcurrent()
 {
-    gPID_CurrentOutLoop.Ref=i_acout;
-    gPID_CurrentOutLoop.Fdb=ac1info.I;
+    
+    
+    if(cnt_spwm<=100)
+    {
+        gPID_CurrentOutLoop.Ref=i_acout*_SQRT2*_sin((float)cnt_spwm/200*_2PI);
+        gPID_CurrentOutLoop.Fdb=-i_in2.Value;
+    }
+    else 
+    {
+        gPID_CurrentOutLoop.Ref=-i_in2.Value;
+        gPID_CurrentOutLoop.Fdb=i_acout*_SQRT2*_sin((float)cnt_spwm/200*_2PI);
+    }
+//    gPID_CurrentOutLoop.Ref=i_acout*_SQRT2*_sin((float)cnt_spwm/400*_2PI);
+//    gPID_CurrentOutLoop.Fdb=-i_in2.Value;
     pid_func.calc(&gPID_CurrentOutLoop);
-    v_buck=gPID_CurrentOutLoop.Output;
+    //v_buck=gPID_CurrentOutLoop.Output;
+    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,gPID_CurrentOutLoop.Output);
+    //i_spwm_ratio=gPID_CurrentOutLoop.Output;
 }
 void power_ctrl_ACvoltage()
 {
-    gPID_ACVOutLoop.Ref=10;//v_inverter_out;
+    gPID_ACVOutLoop.Ref=20.f;//v_inverter_out;
     gPID_ACVOutLoop.Fdb=vp_inverter/_SQRT2;
     pid_func.calc(&gPID_ACVOutLoop);
     v_buck=gPID_ACVOutLoop.Output;
@@ -191,10 +205,18 @@ void power_ctrl_spwm()
     {
         timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,0);
     }
-    if(cnt_spwm==50) vp_inverter=v_in2.Value;//待修改！！！！！！！！！！！！！！
+    if(cnt_spwm==50) 
+    {
+        vp_inverter=v_in2.Value;//待修改！！！！！！！！！！！！！！
+        
+    }
+    if(cnt_spwm==150)
+    {
+        ip_inverter=gPID_CurrentOutLoop.Ek_0;
+    }
     if(cnt_spwm<100)
     {
-        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)cnt_spwm/200*_2PI)*TIMER_CAR(TIMER2)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_0,(uint16_t)(_sin((float)cnt_spwm/200*_2PI)*TIMER_CAR(TIMER2))*i_spwm_ratio);
     }
     if(cnt_spwm==100)
     {
@@ -203,7 +225,7 @@ void power_ctrl_spwm()
     }
     if(cnt_spwm >=100)
     {       
-        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,(uint16_t)(_sin((float)(cnt_spwm-100)/200*_2PI)*TIMER_CAR(TIMER2)));
+        timer_channel_output_pulse_value_config(TIMER2,TIMER_CH_1,(uint16_t)(_sin((float)(cnt_spwm-100)/200*_2PI)*TIMER_CAR(TIMER2))*i_spwm_ratio);
     }
     cnt_spwm++;
     if(cnt_spwm==200)
@@ -234,13 +256,14 @@ void power_ctrl_spwm()
 //    pfc_active_pwm=(1-(pfc_v_in/7.f))*500;
 //    
 //}
-void TIMER7_UP_TIMER12_IRQHandler()//1.25K
+void TIMER7_UP_TIMER12_IRQHandler()//12.5K
 {
     if(timer_flag_get(TIMER7,TIMER_FLAG_UP) == SET )
     {
         timer_flag_clear(TIMER7,TIMER_FLAG_UP);
         adc_value_process();
         if(buck_boost_en==1)power_ctrl_buck();
+        if(aci_loop_en==1) power_ctrl_ACcurrent();
     }
 }
 
@@ -259,7 +282,7 @@ void TIMER7_BRK_TIMER11_IRQHandler()//0.2K
     {
         timer_flag_clear(TIMER11,TIMER_FLAG_UP);
         gpio_bit_toggle(GPIOE,GPIO_PIN_6);
-        if(aci_loop_en==1) power_ctrl_ACcurrent();
+        //if(aci_loop_en==1) power_ctrl_ACcurrent();
         if(acv_loop_en==1) power_ctrl_ACvoltage();
     }
 }
@@ -343,7 +366,7 @@ void power_info_init()
     lpf_v_in4.Fs  = 12.5e3;//采样频率为25KHZ
     low_filter_init(&lpf_v_in4);
     
-    lpf_i_in1.Fc  = 5e3; //截止频率为2KHZ
+    lpf_i_in1.Fc  = 2e3; //截止频率为2KHZ
     lpf_i_in1.Fs  = 12.5e3;//采样频率为25KHZ
     low_filter_init(&lpf_i_in1);
     
