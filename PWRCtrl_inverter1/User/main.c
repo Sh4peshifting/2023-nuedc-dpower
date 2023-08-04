@@ -20,6 +20,7 @@
 void task_hmi_rx(void);
 void task_hmi_tx(void);
 void task_hlw8032(void);
+void startup(void);
 
 uint8_t flag_hmi_tx=0;
 /************************************************
@@ -46,13 +47,12 @@ int main(void)
     uart3_gpio_config(4800U);
     power_info_init();
     eg2104_sd_init();
+    relay_gpio_init();
     
     buck_boost_init();
-    //timer1_set_pwm(700);
-    //pfc_init();
     timer2_pwm_config();//spwm
     timer8_int_init();//10K
-    //zcd_init();
+    zcd_init();
     timer11_int_init();//200Hz
     
     for(uint8_t i=0;i<3;i++)
@@ -61,7 +61,15 @@ int main(void)
         delay_1ms(200);
     }
     
-    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,500);
+   // timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,500);
+//         relay_cmd(0,SET);
+//        relay_cmd(1,SET); 
+    //startup();
+    gpio_bit_set(GPIOE,GPIO_PIN_2);
+    gpio_bit_set(GPIOE,GPIO_PIN_5);
+    //aci_loop_en=1;
+    buck_boost_en=1;
+    acv_loop_en=1;
     while(1) 
     {
 		if(uart3_complete_flag == 1)
@@ -83,7 +91,7 @@ int main(void)
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_4);
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_5);
 //        gpio_bit_toggle(GPIOE,GPIO_PIN_6);
-        delay_1ms(100);
+//        delay_1ms(100);
     }
 }
 
@@ -95,30 +103,43 @@ void task_hmi_rx()
     {
         if(rec.val==1)
         {
-            gpio_bit_set(GPIOE,GPIO_PIN_2);
-            gpio_bit_set(GPIOE,GPIO_PIN_5);
-            //buck_boost_en=1;
-            //acv_loop_en=1;
-            aci_loop_en=1;
-            pfc_en=1;
+//            gpio_bit_set(GPIOE,GPIO_PIN_2);
+//            gpio_bit_set(GPIOE,GPIO_PIN_5);
+//            buck_boost_en=1;
+//            acv_loop_en=1;
+//            aci_loop_en=1;
+//            pfc_en=1; 
+//            exti_interrupt_disable(EXTI_3);
+            relay_cmd(0,SET);
+            relay_cmd(1,SET);
+            buck_boost_en=0;
+            acv_loop_en=0;
+            //aci_loop_en=1;
+            
         }
         else if(rec.val==0)
         {
-            gpio_bit_reset(GPIOE,GPIO_PIN_2);
-            gpio_bit_reset(GPIOE,GPIO_PIN_5);
-            aci_loop_en=0;
-            buck_boost_en=0;
-            acv_loop_en=0;
-            pfc_en=0;
+//            gpio_bit_reset(GPIOE,GPIO_PIN_2);
+//            gpio_bit_reset(GPIOE,GPIO_PIN_5);
+//            aci_loop_en=0;
+//            buck_boost_en=0;
+//            acv_loop_en=0;
+//            pfc_en=0;
+            relay_cmd(0,RESET);
+            relay_cmd(1,RESET);
         }
+    }
+    else if(rec.objname==CURRENT)
+    {
+        i_acout=rec.val;
     }
 }
 void task_hmi_tx()
 {
-    send_two_decimal("voltage",vp_inverter);
+    send_two_decimal("voltage",v_gird);
     send_two_decimal("current",ip_inverter);
     send_two_decimal("V_IN1",v_in1.Value);
-    send_two_decimal("V_IN2",v_in2.Value);
+    send_two_decimal("V_IN2",v_in4.Value);
     send_two_decimal("I_IN1",i_in1.Value);
     send_two_decimal("I_IN2",i_in2.Value);
 }
@@ -130,7 +151,38 @@ void task_hlw8032()
     send_two_decimal("power",ac1info.AC_P);
     send_three_decimal("power_factor",ac1info.F);
 }
-
+void startup()
+{
+    delay_1ms(2000);
+    if(v_gird>=5000)
+    {
+        relay_cmd(0,SET);
+        relay_cmd(1,SET);
+        gpio_bit_set(GPIOE,GPIO_PIN_2);
+        gpio_bit_set(GPIOE,GPIO_PIN_5);
+        buck_boost_en=1;
+        acv_loop_en=1;
+    }
+    else if(v_gird>=4)
+    {
+        v_inverter_out=v_gird;
+        gpio_bit_set(GPIOE,GPIO_PIN_2);
+        gpio_bit_set(GPIOE,GPIO_PIN_5);       
+        buck_boost_en=1;
+        acv_loop_en=1;
+        delay_1ms(2000);
+        acv_loop_en=0;
+        buck_boost_en=0;
+        
+        relay_cmd(0,SET);
+        relay_cmd(1,SET);
+        
+        aci_loop_en=1;
+        i_acout=1.0f;
+    }
+    
+    
+}
 /*systick中断里每1ms调用一次*/
 void task_manager_beat()
 {

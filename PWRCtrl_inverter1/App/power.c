@@ -3,7 +3,7 @@
 uint8_t buck_boost_en=0,pfc_en=0,inverter_en=0,aci_loop_en=0,acv_loop_en=0;
 uint16_t pfc_active_pwm=00;
 uint16_t cnt_spwm=0;
-float v_buck=24.f,i_acout=0.7f,vp_inverter=15,v_inverter_out,ip_inverter,i_spwm_ratio=1;
+float v_buck=12.f,i_acout=0.4f,vp_inverter=15,v_inverter_out=7,ip_inverter,i_spwm_ratio=1,v_gird;
 
 PID_STRUCT gPID_VoltOutLoop; //输出电压环PID数据
 PID_STRUCT gPID_CurrentOutLoop; //输出电压环PID数据
@@ -21,7 +21,7 @@ LOW_FILTER_STRUCT  lpf_i_in3;
 ELEC_INFO_STRUCT v_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
 ELEC_INFO_STRUCT v_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
 ELEC_INFO_STRUCT v_in3 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数  
-ELEC_INFO_STRUCT v_in4 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, DC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
+ELEC_INFO_STRUCT v_in4 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, AC_VOLTAGE_RETIO, 0.00f}; //输出电压参数 
 ELEC_INFO_STRUCT i_in1 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
 ELEC_INFO_STRUCT i_in2 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
 ELEC_INFO_STRUCT i_in3 =   {0.00f, 0.00f, 0.00f, 0.00f, 0.00f, CURRENT_RATIO, 0.00f}; //输出电压参数
@@ -67,7 +67,20 @@ void eg2104_sd_init()
     gpio_output_options_set(GPIOE,GPIO_OTYPE_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_2|GPIO_PIN_4|GPIO_PIN_5|GPIO_PIN_6);
     
 }
-
+void relay_gpio_init()
+{
+    rcu_periph_clock_enable(RCU_GPIOC);
+    gpio_mode_set(GPIOC,GPIO_MODE_OUTPUT,GPIO_PUPD_PULLDOWN,GPIO_PIN_10|GPIO_PIN_11);
+    gpio_output_options_set(GPIOC,GPIO_OTYPE_PP,GPIO_OSPEED_50MHZ,GPIO_PIN_10|GPIO_PIN_11);
+}
+void relay_cmd(uint8_t ch,bit_status bit)
+{
+    uint32_t pin;
+    if(ch==0) pin=GPIO_PIN_10;
+    else pin=GPIO_PIN_11;
+    
+    gpio_bit_write(GPIOC,pin,bit);
+}
 void zcd_init()
 {
     rcu_periph_clock_enable(RCU_GPIOG);
@@ -115,12 +128,12 @@ void buck_boost_init()
 
   	pid_func.reset(&gPID_CurrentOutLoop);
     gPID_CurrentOutLoop.T       = 0.40f;//PID控制周期，单位100us
-    gPID_CurrentOutLoop.Kp      = 20.00f;
-    gPID_CurrentOutLoop.Ti      = 0.5f;
+    gPID_CurrentOutLoop.Kp      = 15.00f;
+    gPID_CurrentOutLoop.Ti      = 0.3f;
     gPID_CurrentOutLoop.Td      = 0.01f;
     gPID_CurrentOutLoop.Ek_Dead = 0.01f;
     gPID_CurrentOutLoop.OutMin  = 0.03f * DP_PWM_PER;//最小
-    gPID_CurrentOutLoop.OutMax  = 0.90f * DP_PWM_PER;//最大
+    gPID_CurrentOutLoop.OutMax  = 0.80f * DP_PWM_PER;//最大
     pid_func.init(&gPID_CurrentOutLoop);
     
     pid_func.reset(&gPID_ACVOutLoop);
@@ -130,7 +143,7 @@ void buck_boost_init()
     gPID_ACVOutLoop.Td      = 0.01f;
     gPID_ACVOutLoop.Ek_Dead = 0.01f;
     gPID_ACVOutLoop.OutMin  = 10.0f;//最小电压
-    gPID_ACVOutLoop.OutMax  = 30.0f;//最大电压
+    gPID_ACVOutLoop.OutMax  = 24.0f;//最大电压
     pid_func.init(&gPID_ACVOutLoop); 
     
 
@@ -177,11 +190,11 @@ void power_ctrl_ACcurrent()
     if(cnt_spwm<=100)
     {
         gPID_CurrentOutLoop.Ref=i_acout*_SQRT2*_sin((float)cnt_spwm/200*_2PI);
-        gPID_CurrentOutLoop.Fdb=-i_in2.Value;
+        gPID_CurrentOutLoop.Fdb=i_in2.Value;
     }
     else 
     {
-        gPID_CurrentOutLoop.Ref=-i_in2.Value;
+        gPID_CurrentOutLoop.Ref=i_in2.Value;
         gPID_CurrentOutLoop.Fdb=i_acout*_SQRT2*_sin((float)cnt_spwm/200*_2PI);
     }
 //    gPID_CurrentOutLoop.Ref=i_acout*_SQRT2*_sin((float)cnt_spwm/400*_2PI);
@@ -193,7 +206,7 @@ void power_ctrl_ACcurrent()
 }
 void power_ctrl_ACvoltage()
 {
-    gPID_ACVOutLoop.Ref=20.f;//v_inverter_out;
+    gPID_ACVOutLoop.Ref=v_inverter_out;
     gPID_ACVOutLoop.Fdb=vp_inverter/_SQRT2;
     pid_func.calc(&gPID_ACVOutLoop);
     v_buck=gPID_ACVOutLoop.Output;
@@ -208,6 +221,8 @@ void power_ctrl_spwm()
     if(cnt_spwm==50) 
     {
         vp_inverter=v_in2.Value;//待修改！！！！！！！！！！！！！！
+        v_gird=v_in4.Value/_SQRT2;
+        
         
     }
     if(cnt_spwm==150)
@@ -325,7 +340,7 @@ void adc_value_process()
     lpf_v_in1.Input=(adc0_value[0]*v_in1.Coeff)+v_in1.Offset;
     lpf_v_in2.Input=(adc0_value[1]*v_in2.Coeff)+v_in2.Offset;
     lpf_v_in3.Input=(adc0_value[2]*v_in3.Coeff)+v_in3.Offset;
-    lpf_v_in4.Input=(adc0_value[3]*v_in4.Coeff)+v_in4.Offset;
+    lpf_v_in4.Input=(adc0_value[3]-(float)2048)*v_in4.Coeff+v_in4.Offset;
     lpf_i_in1.Input=(adc0_value[4]-(float)2048)*i_in1.Coeff+i_in1.Offset;
     lpf_i_in2.Input=(adc0_value[5]-(float)2048)*i_in2.Coeff+i_in2.Offset;
     lpf_i_in3.Input=(adc0_value[6]-(float)2048)*i_in3.Coeff+i_in3.Offset;
