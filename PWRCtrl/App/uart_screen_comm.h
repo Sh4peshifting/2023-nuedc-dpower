@@ -14,7 +14,9 @@ enum {
     CURRENT_CALIBRATION = 0x05,
     VOLTAGE_CALIBRATION = 0x06,
     POWER_CALIBRATION = 0x07,
-    CALIBRATION = 0x08
+    CALIBRATION = 0x08,
+    RELAY = 0x09,
+    BACK_UP = 0x0a
 };
 
 typedef struct {
