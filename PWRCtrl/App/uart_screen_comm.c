@@ -12,8 +12,21 @@ void send_three_decimal(char* objname, float val) {
 
 obj receive_msg_proc(char msg[]) {
     obj objlist;
-    if (msg[1] == SWITCH) {
-        objlist.objname = SWITCH;
+    if (msg[1] == SWITCH || msg[1] == RELAY || msg[1] == BACK_UP) {
+        switch (msg[1])
+        {
+        case SWITCH:
+            objlist.objname = SWITCH;
+            break;
+        case RELAY:
+            objlist.objname = RELAY;
+            break;
+        case BACK_UP:
+            objlist.objname = BACK_UP;
+            break;
+        default:
+            break;
+        }  
         objlist.val = msg[2];
         return objlist;
     }

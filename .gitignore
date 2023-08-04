@@ -6,3 +6,9 @@
 /PWRCtrl_NEWinverter/Project/Objects/*
 /PWRCtrl_NEWinverter/Project/Listings/*
 .vscode/*
+Report/test.aux
+Report/test.fdb_latexmk
+Report/test.fls
+Report/test.log
+Report/test.synctex.gz
+Report/test.toc
