@@ -3,7 +3,7 @@
 uint8_t inverter_en=0,aci_loop_en=0,acv_loop_en=0,acv_openloop_en=0;
 uint16_t pfc_active_pwm=00;
 uint16_t cnt_spwm=0;
-float i_acout=0.4f,vp_inverter=15,v_inverter_out=7,ip_inverter,i_spwm_ratio=1,v_gird;
+float i_acout=2.0f,vp_inverter=15,v_inverter_out=7,ip_inverter,i_spwm_ratio=1,v_grid;
 
 
 PID_STRUCT gPID_CurrentOutLoop; //输出电压环PID数据
@@ -107,12 +107,12 @@ void buck_boost_init()
 
   	pid_func.reset(&gPID_CurrentOutLoop);
     gPID_CurrentOutLoop.T       = 0.40f;//PID控制周期，单位100us
-    gPID_CurrentOutLoop.Kp      = 15.00f;
-    gPID_CurrentOutLoop.Ti      = 0.3f;
+    gPID_CurrentOutLoop.Kp      = 20.00f;
+    gPID_CurrentOutLoop.Ti      = 0.5f;
     gPID_CurrentOutLoop.Td      = 0.01f;
-    gPID_CurrentOutLoop.Ek_Dead = 0.01f;
-    gPID_CurrentOutLoop.OutMin  = -0.80f * DP_PWM_PER;//最小
-    gPID_CurrentOutLoop.OutMax  = 0.80f * DP_PWM_PER;//最大
+    gPID_CurrentOutLoop.Ek_Dead = 0.001f;
+    gPID_CurrentOutLoop.OutMin  = -0.90f * DP_PWM_PER;//最小
+    gPID_CurrentOutLoop.OutMax  = 0.90f * DP_PWM_PER;//最大
     pid_func.init(&gPID_CurrentOutLoop);
     
     
@@ -132,10 +132,31 @@ void buck_boost_init()
 void power_ctrl_ACcurrent()
 {
     gPID_CurrentOutLoop.Ref=i_acout*_SQRT2*SIN_TIME;
-    gPID_CurrentOutLoop.Ref=i_in3.Value;
-    pid_func.calc(&gPID_CurrentOutLoop);
-    set_spwm(gPID_CurrentOutLoop.Output);
+    gPID_CurrentOutLoop.Fdb=i_in1.Value;
+    float Bias,kp=200,ki=250;  //定义相关变量
+	static float pwm_out, Last_bias; //静态变量，函数调用结束后其值依然存在
+
+	Bias=gPID_CurrentOutLoop.Ref-gPID_CurrentOutLoop.Fdb; //求速度偏差
+
+	pwm_out+=kp*(Bias-Last_bias)+ki*Bias;  //增量式PI控制器
+																																 //Velcity_Kp*(Bias-Last_bias) 作用为限制加速度
+																																 //Velcity_Ki*Bias             速度控制值由Bias不断积分得到 偏差越大加速度越大
+	Last_bias=Bias;
     
+    pwm_out+=SIN_TIME*DP_PWM_PER*0.1f;
+	if(pwm_out>0.90f * DP_PWM_PER)
+	{
+		pwm_out=0.90f * DP_PWM_PER;
+	}
+	if(pwm_out<-0.90f * DP_PWM_PER)
+	{
+		pwm_out=-0.90f * DP_PWM_PER;
+	}
+	
+    //pid_func.calc(&gPID_CurrentOutLoop);
+    //set_spwm(gPID_CurrentOutLoop.Output);
+    set_spwm(pwm_out);
+    if(cnt_spwm==100) ip_inverter=i_in1.Value/_SQRT2;
 }
 void power_ctrl_ACvoltage50Hz()
 {
@@ -150,7 +171,7 @@ void power_ctrl_ACvoltage20K()
 }
 void power_ctrl_ac_openloop()
 {
-    set_spwm(SIN_TIME*TIMER_CAR(TIMER1)*0.8f);
+    set_spwm(SIN_TIME*TIMER_CAR(TIMER1)*0.9f);
 }
 
 void TIMER7_UP_TIMER12_IRQHandler()//20K
@@ -164,6 +185,11 @@ void TIMER7_UP_TIMER12_IRQHandler()//20K
         if(aci_loop_en==1) power_ctrl_ACcurrent();
         if(acv_openloop_en==1) power_ctrl_ac_openloop();
         if(acv_loop_en==1) power_ctrl_ACvoltage20K();
+        if(cnt_spwm == 100) 
+        {
+            v_grid=v_in4.Value;//取电网电压峰值
+            vp_inverter=v_in4.Value;
+        }
     }
 }
 
@@ -208,6 +234,16 @@ void set_spwm(float pwm)//通道2对应输出为正极输出
         timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,(uint16_t)pwm);   
     }
 }
+
+//void set_spwm(float pwm)
+//{
+//    pwm/=2.2f;
+//    pwm+=TIMER_CAR(TIMER1)/2;
+//    if(pwm>=0.9f*TIMER_CAR(TIMER1)) pwm = 0.9f*TIMER_CAR(TIMER1);
+//    if(pwm<=0.1f*TIMER_CAR(TIMER1)) pwm = 0.1f*TIMER_CAR(TIMER1);
+//    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,pwm);
+//    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,pwm);    
+//}
 
 void adc_value_process()
 {

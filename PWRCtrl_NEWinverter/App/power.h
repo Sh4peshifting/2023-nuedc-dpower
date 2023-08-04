@@ -25,7 +25,7 @@
 
 #define SIN_TIME _sin(((float)cnt_spwm/400*_2PI))
 extern uint8_t aci_loop_en,acv_loop_en,acv_openloop_en;
-extern float vp_inverter,ip_inverter,i_acout,v_inverter_out,v_gird;
+extern float vp_inverter,ip_inverter,i_acout,v_inverter_out,v_grid;
 extern AC_Para ac1info;
 extern ELEC_INFO_STRUCT v_in1 ,v_in2,v_in3,v_in4,i_in1,i_in2,i_in3;
 void dp_ElecLineCorr(ELEC_INFO_STRUCT *p);

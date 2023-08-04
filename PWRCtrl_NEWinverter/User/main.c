@@ -49,7 +49,7 @@ int main(void)
     relay_gpio_init();
     
     buck_boost_init();
-    zcd_init();
+//    zcd_init();
     
 //    timer2_pwm_config();//spwm
 //    timer8_int_init();//20K
@@ -96,6 +96,7 @@ void task_hmi_rx()
             gpio_bit_set(GPIOE,GPIO_PIN_2);
             gpio_bit_set(GPIOE,GPIO_PIN_5);
             acv_openloop_en=1;
+            //aci_loop_en=1;
 
 
             
@@ -105,6 +106,7 @@ void task_hmi_rx()
             gpio_bit_reset(GPIOE,GPIO_PIN_2);
             gpio_bit_reset(GPIOE,GPIO_PIN_5);
             acv_openloop_en=0;
+            aci_loop_en=0;
         }
     }
     else if(rec.objname==CURRENT)
@@ -114,7 +116,7 @@ void task_hmi_rx()
 }
 void task_hmi_tx()
 {
-    send_two_decimal("voltage",v_gird);
+    send_two_decimal("voltage",v_grid);
     send_two_decimal("current",ip_inverter);
     send_two_decimal("V_IN1",v_in1.Value);
     send_two_decimal("V_IN2",v_in4.Value);
@@ -131,7 +133,14 @@ void task_hlw8032()
 }
 void startup()
 {
-    
+    if(v_grid>=5) 
+    {
+        
+    }
+    else
+    {
+        exti_interrupt_disable(EXTI_3);
+    }
     
 }
 /*systick中断里每1ms调用一次*/
