@@ -10,8 +10,9 @@
 \usepackage{amssymb} % 数学符号
 \usepackage{booktabs} % 三线表
 \usepackage{multirow} % 多行合并
-\usepackage{hyperref} % 超链接
 \usepackage[style=gb7714-2015]{biblatex} % 参考文献格式设置
+\usepackage{caption} % 图表标题字体
+\usepackage{float} % 图表位置设置
 
 % 页边距设置
 \geometry{left=2.5cm,right=2.5cm,top=3cm,bottom=2.5cm}
@@ -39,13 +40,14 @@
 \setlength{\absrightindent}{0pt} % 摘要右缩进
 
 % 正文行距设置
-\linespread{1.46}
+\linespread{1.44}
 
 % 参考文献格式设置
 \addbibresource{ref.bib}
 
 % 开始文档
 \begin{document}
+\captionsetup{font={small}} % 图表标题字体
 \includepdf[pages={1}]{src/cover.pdf}
 % 生成标题页
 
@@ -86,7 +88,7 @@ SPWM 波逆变、增量式PID算法、过零比较器、并网、LC滤波
 逆变器并联后可为电阻负载$R_L$供电，也可通过变压器T并入220V电网。
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.5\textwidth]{src/fig1.png}
+\includegraphics[width=0.7\textwidth]{src/fig1.png}
 \caption{单相逆变器并联示意图}
 \label{fig1}
 \end{figure}
@@ -104,7 +106,6 @@ SPWM 波逆变、增量式PID算法、过零比较器、并网、LC滤波
     逆变器1及逆变器2的输出电流比值$K=I_{o1}:I_{o2}$
     可在$0.5\sim 2$内按数字设定自动分配，
     其相对误差的绝对值不大于$5\%$。
-    \item 其他。
 \end{enumerate}
 
 \section{系统方案设计}
@@ -112,23 +113,25 @@ SPWM 波逆变、增量式PID算法、过零比较器、并网、LC滤波
 
 \subsubsection{H桥设计方案}
 \begin{enumerate}
-    \item[方案一] 使用EG2104S栅极驱动芯片和BSC070N10NS
+    \item 使用EG2104S栅极驱动芯片和BSC070N10NS
     \\ 
     EG2104S是一种自举升压的栅极驱动芯片，有一路驱动信号的输入端
     有较强的拉灌电流能力，有一个驱动信号的输入和一个使能端，
     可以自动生成互补信号并插入内建死区时间，且内置下拉电阻，
     防止误触发。
-    \item[方案二] 采用UCC27211和BSC070N10NS
+    \item 采用UCC27211和BSC070N10NS
     \\ 
     UCC27211是自举升压型栅极驱动器，有两个驱动信号的输入端，
     可以独立控制上下MOS管，需要MCU生成互补信号和插入死区时间，
     控制程序更为复杂。
 \end{enumerate}
-综合以上两种方案，我们选择方案一。
+
+
+综合以上两种方案，我们选择方案1。
 
 \subsubsection{主控 MCU 的选择}
 \begin{enumerate}
-    \item[方案一] 梁山派GD32F470ZGT6 
+    \item 梁山派GD32F470ZGT6 
     \\
     梁山派采用基于 ARM Cortex-M4 内核的GD32F470ZGT6，
     主频可达240MHz，能够满足电源环路的高速运算，板上具有丰富外设，
@@ -136,43 +139,48 @@ SPWM 波逆变、增量式PID算法、过零比较器、并网、LC滤波
     具有2.6Mbps的ADC，每个ADC具有19个通道，可供高速取样模拟信号，
     且开发板上具有大功率3.3V的输出，可以满足外设的供电需求，
     是国产芯片，封装的函数库简洁高效。
-    \item[方案二] STM32G431RBT6 
+    \item STM32G431RBT6 
     \\ 
     基于 ARM Cortex-M系列 内核，
     主频可达 170MHz，具有52个GPIO接口，多个定时器，
     支持较多通信接口和外设，ADC DAC精度很高，
     但其使用的HAL库代码较为抽象难懂。    
-    \item[方案三] STC89C52 
+    \item STC89C52 
     \\ 
     价格便宜，但基于 8051 内核，主频只有 12MHz，
     内存容量小，IO和定时器数量少。
 \end{enumerate}
-综合以上两种方案，我们选择方案二。
+
+
+综合以上两种方案，我们选择方案2。
 
 \subsubsection{电流采样方案的选择}
 \begin{enumerate}
-    \item[方案一] INA199电流采样芯片 
+    \item INA199电流采样芯片 
     \\ 
     电路简单，成本低，但是需要采用电流取样电阻，
     电阻功耗大，而且承受的共模电压低，不能用高端电流取样，
     且电阻的阻值会随着温度的变化而变化，影响采样精度。
-    \item[方案二] 使用CC6903霍尔传感器 
+    \item 使用CC6903霍尔传感器 
     \\ 
     电路简单，成本低，芯片价格便宜，而且霍尔传感器共模电压高，
     且不需要采样电阻，损失能量少，不受温度影响，采样精度高。
-    \item[方案三] 使用HLW8032电能采样芯片  
+    \item 使用HLW8032电能采样芯片  
     \\
     采样简单，不需要进行滤波和运算，直接输出有效值和功率值；
     缺点是采样精度低，数据刷新速度慢。
 \end{enumerate}
-综合以上两种方案，我们选择方案二。
+
+
+
+综合以上两种方案，我们选择方案2。
 
 \subsection{系统设计结构原理}
 根据题目要求和设计方案，
 本文设计了如图\ref{fig2}所示的系统结构原理图。
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.6\textwidth]{src/fig.png}
+\includegraphics[width=0.9\textwidth]{src/fig.png}
 \caption{系统结构原理图}
 \label{fig2}
 \end{figure}
@@ -188,13 +196,13 @@ SPWM是一种常用的逆变控制方法，
 输出低电平。这样就可以得到近似于正弦波的波形。
 \\
 根据 SPWM 法的原理，可以推得
-\begin{equation*}
+\begin{equation}
 T_{on}=\frac{ARR-CCR}{ARR}=\frac{U_c\sin(\omega t_o)}{U}
-\end{equation*}
+\end{equation}
 故单片机中寄存器的值应赋值为
-\begin{equation*}
+\begin{equation}
 CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
-\end{equation*}
+\end{equation}
 
 \subsection{逆变器并网运行原理与控制}
 逆变器并网运行需要满足以下条件：
@@ -213,10 +221,13 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 \subsection{电路设计}
 
 \subsubsection{电路总体设计}
-\begin{figure}[h]
+电路总体框图如图\ref{fig4}所示，主控通过电流采样，以及过零比较器
+调整相位，控制逆变器的输出，使其满足并网要求。
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.7\textwidth]{src/fig4.png}
 \caption{电路总体框图}
+\label{fig4}
 \end{figure}
 
 \subsubsection{交流电压采样}
@@ -225,7 +236,7 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 然后经过SGM8632运放进行反向和抬升，
 使原本的交流电压落在$0\sim 3.3V$的范围之内，
 经过RC滤波电路后输入到ADC进行采样。
-\begin{figure}[h]
+\begin{figure}[H]
 \centering
 \includegraphics[width=0.8\textwidth]{src/fig5.png}
 \caption{交流电压采样设计图}
@@ -238,19 +249,18 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 调整$\sin$函数的计数值为0，即一个周期的开始，
 使程序中的正弦信号与外部电网同步。
 
-
 \begin{figure}[htbp]
     \centering
     \begin{minipage}{0.45\textwidth}
         \centering
-        \includegraphics[width=0.9\textwidth]{src/fig8.png}
+        \includegraphics[width=1\textwidth]{src/fig8.png}
         \caption{过零比较器设计图}
         \label{fig8}
     \end{minipage}
-    \qquad
+    \quad
     \begin{minipage}{0.45\textwidth}
         \centering
-        \includegraphics[width=0.9\textwidth]{src/fig11.png}
+        \includegraphics[width=1\textwidth]{src/fig11.png}
         \caption{电流取样设计图}
         \label{fig11}
     \end{minipage}
@@ -261,12 +271,19 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 \subsubsection{H桥}
 H桥电路独立设计，板上集成栅极驱动电路和母线电容，
 预留控制信号的输入端口和电源的输入输出端口。
-\begin{figure}[h]
+\begin{figure}[htbp]
     \centering
-    \includegraphics[width=0.4\textwidth]{src/fig6.png}
-    \qquad
-    \includegraphics[width=0.4\textwidth]{src/fig7.png}
-    \caption{H桥设计图}
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{src/fig6.png}
+        \caption{H桥设计图}
+    \end{minipage}
+    \quad
+    \begin{minipage}{0.45\textwidth}
+        \centering
+        \includegraphics[width=1\textwidth]{src/fig7.png}
+        \caption{栅极驱动电路图}
+    \end{minipage}
 \end{figure}
 \newpage
 \subsubsection{辅助电源}
@@ -275,53 +292,52 @@ XL8015支持最高$80V$的输入，输出功率最大$12V$，
 作为第一级电源把主电源的电压降到12V，
 用于给MOS的栅极驱动芯片和串口屏供电，
 然后LM2596把$12V$的电压降为$5V$，用于给主控板供电，
-主控上有FSF把$5V$降到$3.3V$，用于给GD32F470ZGT6供电和运放供电，
+主控板上有TMI3411把$5V$降到$3.3V$，
+用于给GD32F470ZGT6供电和运放供电，
 使用SGM3204电荷泵芯片产生$-5V$的电源，给运放供电。
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.5\textwidth]{src/fig2.png}
-    \caption{整体供电方案}
-    \end{figure}
-\subsection{程序设计}
-
-\subsubsection{程序总体结构}
-根据题目要求，软件中基础部分主要实现逆变器输出符合要求的电流电压，
-发挥部分可实现逆变器的并联且能并网，电流电压频率等均满足要求。
+详见附录图\ref{fig10}，图\ref{fig9}。
 
 \subsubsection{SPWM的生成}
-根据系统功能需求和控制方法，
-本文设计了如图\ref{fig12}所示的SPWM生成程序框图。
-\begin{figure}[h]
+根据系统功能需求，本文SPWM生成流程如图\ref{fig12}所示。
+代码详见附录\ref{set_spwm}。
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{src/fig12.png}
     \caption{SPWM生成程序框图}
     \label{fig12}
 \end{figure}
 
-\newpage
 \subsubsection{电压、电流控制环路}
-\begin{figure}[h]
+电压、电流控制环路如图\ref{fig3}所示，当定时器溢出后，
+会进行ADC采样，采样完成后，会进行增量式PID运算，
+从而更新PWM值，实现电压、电流的控制。
+代码详见附录\ref{pid}，\ref{current}。
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\textwidth]{src/fig3.png}
     \caption{电压、电流控制环路}
+    \label{fig3}
 \end{figure}
 
 \section{系统测试及结果分析}
 
 \subsection{测试方案}
-为了验证系统的性能是否满足设计要求，本文设计了以下测试方案：
-\begin{itemize}
-    \item[测试一] 断开S2，闭合S1,
+为了验证系统的性能是否满足设计要求，本设计采用了以下测试方案，
+测试仪器见表\ref{tab1}。
+\begin{enumerate}
+    \item 断开S2，闭合S1,
     测试逆变器1向负载供电时的$U_o\ I_o\ f\ THD$以及负载调整率等。
-    \item[测试二] 断开S2闭合S1，
-    测试两个逆变器并联向负载供电时的$U_o\quad  I_o\quad  f$等。
-    \item[测试三] 断开S2闭合S1，
+    \item 断开S2闭合S1，
+    测试两个逆变器并联向负载供电时的$U_o\   I_o\   f$等。
+    \item 断开S2闭合S1，
     测试两个逆变器并联且并网后的输出电流、输出电流比值、
     其误差绝对值。
-\end{itemize}
+\end{enumerate}
 
-\begin{table}[h]
+\begin{table}[H]
     \centering
+    \begin{minipage}{0.45\textwidth}
+    \caption{测试仪器}
     \begin{tabular}{cccc}
     \toprule
     序号 & 仪器名称 & 型号 & 数量  \\ \midrule
@@ -330,34 +346,38 @@ XL8015支持最高$80V$的输入，输出功率最大$12V$，
     3 & 功率分析仪 & TA333H & 1 \\
     4 & 万用表 &  ZT102A & 1
     \\ \bottomrule
+    \label{tab1}
     \end{tabular}
-    \caption{测试仪器}
-\end{table}
-\newpage
-\subsection{测试结果及分析}
-\begin{table}[h]
+    \end{minipage}
+    \quad
+    \begin{minipage}{0.45\textwidth}
     \centering
+    \caption{测试结果}
     \begin{tabular}{@{}cccc@{}}
     \toprule
-    测试项目 & 测试指标 & 测试结果 & 测试结论 \\ \midrule
-    \multirow{4}{*}{测试一} & $U_o$ & $24.1V$ & \multirow{4}{*}{满足要求} \\
+    序号 & 测试指标 & 测试结果 & 结论 \\ \midrule
+    \multirow{4}{*}{1} & $U_o$ & $24.1V$ & \multirow{4}{*}{满足要求} \\
      & $I_o$ & $2.1A$ &  \\
      & $f_o$ & $50.1Hz$ &  \\
      & $THD$ & $1.8\%$ &  \\ \midrule
-    \multirow{3}{*}{测试二} & $U_o$ & $24.0V$ & \multirow{3}{*}{满足要求} \\
+    \multirow{3}{*}{2} & $U_o$ & $24.0V$ & \multirow{3}{*}{满足要求} \\
         & $I_o$ & $4.1A$ &  \\
         & $f_o$ & $50.1Hz$ &  \\ \midrule
-    \multirow{3}{*}{测试三} & $I_{o1}$ & $2.1A$ & \multirow{3}{*}{满足要求} \\
+    \multirow{3}{*}{3} & $I_{o1}$ & $2.1A$ & \multirow{3}{*}{满足要求} \\
         & $I_{o2}$ & $1.0A$ &  \\
         & $K$ & $2.1$ &  \\ \bottomrule
     \end{tabular}
-    \caption{测试结果}
+    \label{tab2}
+    \end{minipage}
 \end{table}
+\newpage
+\subsection{测试结果及分析}
+系统的性能经过测试，具有较高的效率和稳定性，
+能够实现逆变器的并联运行和并网运行，
+测试结果见表\ref{tab2}及图\ref{res}。
 
 \section{结论}
-系统的性能经过测试，具有较高的效率和稳定性，
-能够实现逆变器的并联运行和并网运行。
-本文的主要创新点和优点如下使用高性能的单片机 GD32F470 控制逆变器，
+本设计的主要创新点和优点如下使用高性能的单片机 GD32F470 控制逆变器，
 充分利用其高速运算和多功能外设的特点，
 实现多任务的并行处理和高效率的数据传输。
 使用主从控制方式实现逆变器并联运行，简化了调节机制，
@@ -373,14 +393,16 @@ XL8015支持最高$80V$的输入，输出功率最大$12V$，
 
 \appendix
 \section{附录}
-\subsection*{主要元器件清单}
+\subsection{主要元器件清单}
 \noindent 梁山派GD32F470开发板 \quad 淘晶驰X2系列串口屏 
-\quad BSC070N10NS\quad EG2104S \quad SGM3204\quad SGM8632
-\quad LM358\quad 74HC245\quad  XL8015降压模块\quad LM2596降压模块
-\quad 磁环电感\quad \newline CBB22电容\quad 可调电阻 \quad 稳压模块 
-\quad 双路继电器模块 \quad CC6903\quad 电阻 \quad 电容 \quad 电感 \quad 
-\subsection*{部分程序代码如下}
-\subsubsection*{增量式PID运算}
+\quad EG2104S \quad SGM3204 \quad SGM8632 
+\quad BSC070N10NS\quad LM358\quad 74HC245
+\quad XL8015降压模块 \quad LM2596降压模块
+\quad 磁环电感\quad CBB22电容
+\quad 可调电阻 \quad 稳压模块 \quad 双路继电器模块 
+\quad CC6903\quad 电阻 \quad 电感 
+\subsection{部分程序代码如下}
+\subsubsection{增量式PID运算}\label{pid}
 \begin{verbatim}
 p->Ek_0 = p->Ref - p->Fdb;  //计算误差
 //误差小于设定死区，不进行PID计算，保持上一次输出
@@ -408,24 +430,24 @@ if(p->Output < p->OutMin)
     return;
 }
 \end{verbatim} 
-\subsubsection*{PWM的设置}
+\subsubsection{PWM的设置}\label{set_spwm}
 \begin{verbatim}
 void set_spwm(float pwm)//通道2对应输出为正极输出
 {
     if(pwm>0)
     {
-    timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,(uint16_t)pwm);
-        timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,0);
+        tim_ch_output_pulse_config(TIMER1,TIMER_CH_2,(uint16_t)pwm);
+        tim_ch_output_pulse_config(TIMER1,TIMER_CH_3,0);
     }
     else
     {
         pwm=-pwm;
-        timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_2,0);
-        timer_channel_output_pulse_value_config(TIMER1,TIMER_CH_3,(uint16_t)pwm);   
+        tim_ch_output_pulse_config(TIMER1,TIMER_CH_2,0);
+        tim_ch_output_pulse_config(TIMER1,TIMER_CH_3,(uint16_t)pwm);   
     }
 }
 \end{verbatim}
-\subsubsection*{电流环运算}
+\subsubsection{电流环运算}\label{current}
 \begin{verbatim}
 void power_ctrl_ACcurrent()
 {
@@ -453,7 +475,7 @@ void power_ctrl_ACcurrent()
 \end{verbatim}
 
 
-\subsection*{阻性负载测试}
+\subsection{阻性负载测试结果}\label{res}
 \begin{figure}[htbp]
     \centering
     \begin{minipage}{0.45\textwidth}
@@ -467,19 +489,24 @@ void power_ctrl_ACcurrent()
         \includegraphics[width=0.9\textwidth]{src/result2.jpg}
         \caption{示波器波形}
     \end{minipage}
+    \\
+    \includegraphics[width=0.3\textwidth]{src/circuit.jpg}
+    \caption{部分电路连接图}
 \end{figure}
 \newpage
-\subsection*{$3.3V$辅助电源}
+\subsection{$3.3V$辅助电源设计图}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{src/fig10.png}
+    \includegraphics[width=0.7\textwidth]{src/fig10.png}
     \caption{3.3V辅助电源}
+    \label{fig10}
 \end{figure}
-\subsection*{$\pm 5V$电源}
+\subsection{$\pm 5V$电源设计图}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{src/fig9.png}
+    \includegraphics[width=0.7\textwidth]{src/fig9.png}
     \caption{$\pm 5V$电源}
+    \label{fig9}
 \end{figure}
 % 结束文档
 \end{document}
