@@ -1,36 +1,34 @@
-# nuedc23_dpower
+# National College Student Electronic Design Competition 2023 - Topic A
 
-#### Description
-{**When you're done, you can delete the content in this README and update the file with details for others getting started with your repository**}
+#### Introduction
+Source code for the power supply topic of the National College Student Electronic Design Competition 2023, hosted by Shandong University of Science and Technology.
 
-#### Software Architecture
-Software architecture description
+#### Hardware List
+- Liangshan Pi GD32F470 development board
+- Taojingchi X2 series serial screen
+- EG2104S
+- SGM3204
+- SGM8632
+- BSC070N10NS
+- LM358
+- 74HC245
+- XL8015 buck module
+- LM2596 buck module
+- Magnetic ring inductor
+- CBB22 capacitor
+- Adjustable resistor
+- Voltage regulator module
+- Dual relay module
+- CC6903
+- Resistor
+- Inductor
 
-#### Installation
+#### Usage
+1. The `PWRCtrl_NEWinverter` folder contains the main control source code for this topic.
+2. The `Report` folder contains the design report, including circuit schematics, PCB design, circuit analysis, program flowcharts, etc.
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Instructions
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
-
-#### Contribution
-
-1.  Fork the repository
-2.  Create Feat_xxx branch
-3.  Commit your code
-4.  Create Pull Request
-
-
-#### Gitee Feature
-
-1.  You can use Readme\_XXX.md to support different languages, such as Readme\_en.md, Readme\_zh.md
-2.  Gitee blog [blog.gitee.com](https://blog.gitee.com)
-3.  Explore open source project [https://gitee.com/explore](https://gitee.com/explore)
-4.  The most valuable open source project [GVP](https://gitee.com/gvp)
-5.  The manual of Gitee [https://gitee.com/help](https://gitee.com/help)
-6.  The most popular members  [https://gitee.com/gitee-stars/](https://gitee.com/gitee-stars/)
+#### Contributing
+1. Fork this repository.
+2. Create a new branch.
+3. Commit your changes.
+4. Create a new pull request.
