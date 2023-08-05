@@ -11,6 +11,7 @@
 \usepackage{booktabs} % 三线表
 \usepackage{multirow} % 多行合并
 \usepackage{hyperref} % 超链接
+\usepackage[style=gb7714-2015]{biblatex} % 参考文献格式设置
 
 % 页边距设置
 \geometry{left=2.5cm,right=2.5cm,top=3cm,bottom=2.5cm}
@@ -40,6 +41,8 @@
 % 正文行距设置
 \linespread{1.46}
 
+% 参考文献格式设置
+\addbibresource{ref.bib}
 
 % 开始文档
 \begin{document}
@@ -130,7 +133,7 @@ SPWM 波逆变、梁山派GD32F470、PID算法、过零比较器
     梁山派采用基于 ARM Cortex-M4 内核的GD32F470ZGT6，
     主频可达240MHz，能够满足电源环路的高速运算，板上具有丰富外设，
     并引出多个GPIO接口，支持多种通信接口和外设，
-    具有2.4Mbps的ADC，每个ADC具有19个通道，可供高速取样模拟信号，
+    具有2.6Mbps的ADC，每个ADC具有19个通道，可供高速取样模拟信号，
     且开发板上具有大功率3.3V的输出，可以满足外设的供电需求，
     是国产芯片，封装的函数库简洁高效。
     \item[方案二] STM32G431RBT6 
@@ -219,8 +222,8 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 \subsubsection{交流电压采样}
 如图\ref{fig5}所示，交流电压取样采用把交流电压先经过电阻分压，
 然后使用LM358作为电压跟随器，
-然后经过SGM8632F运放进行反向和抬升，
-使原本的交流电压落在0-3.3的范围之内，
+然后经过SGM8632运放进行反向和抬升，
+使原本的交流电压落在$0\sim 3.3V$的范围之内，
 经过RC滤波电路后输入到ADC进行采样。
 \begin{figure}[h]
 \centering
@@ -232,7 +235,7 @@ CCR=ARR-\frac{U_c\sin (\omega t_o)}{U}\times ARR
 \subsubsection{过零比较器}
 如图\ref{fig8}所示，采用SGM8632运放把输入的交流电经过电阻分压之后，
 过零比较器输出上升沿，单片机进入中断，
-单调整$\sin$函数的计数值为0，即一个周期的开始，
+调整$\sin$函数的计数值为0，即一个周期的开始，
 使程序中的正弦信号与外部电网同步。
 
 
@@ -346,7 +349,7 @@ XL8015支持最高80V的输入，输出功率最大12v，
         & $f_o$ & $50.1Hz$ &  \\ \midrule
     \multirow{3}{*}{测试三} & $I_{o1}$ & $2.1A$ & \multirow{3}{*}{满足要求} \\
         & $I_{o2}$ & $1.0A$ &  \\
-        & $K$ & $1.05$ &  \\ \bottomrule
+        & $K$ & $2.1$ &  \\ \bottomrule
     \end{tabular}
     \caption{测试结果}
 \end{table}
@@ -361,6 +364,10 @@ XL8015支持最高80V的输入，输出功率最大12v，
 提高了同步精度和灵活性。使用相位移位控制方式实现逆变器并网运行，
 简化了控制方法，提高了响应速度和可靠性。
 使用触摸串口屏作为人机交互界面，方便了用户对系统的操作和监测。
+
+\nocite{*}
+\printbibliography
+
 
 \newpage
 
@@ -460,6 +467,19 @@ void power_ctrl_ACcurrent()
         \includegraphics[width=0.9\textwidth]{src/result2.jpg}
         \caption{示波器波形}
     \end{minipage}
+\end{figure}
+\newpage
+\subsection*{$3.3V$辅助电源}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{src/fig10.png}
+    \caption{3.3V辅助电源}
+\end{figure}
+\subsection*{$\pm 5V$电源}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{src/fig9.png}
+    \caption{$\pm 5V$电源}
 \end{figure}
 % 结束文档
 \end{document}
