@@ -5,24 +5,13 @@
 
 #### 硬件架构
 - 单片机：GD2F4XX
-- 交流电参数采样模块：HLW8032
-
-
-#### 安装教程
-
-1.  xxxx
-2.  xxxx
-3.  xxxx
 
 #### 使用说明
 
-1.  xxxx
-2.  xxxx
-3.  xxxx
+1.  `PWRCtrl_`前缀文件夹为主控相关代码
+2.  `Flowchart`文件夹为软件流程图
+3.  `Report`包含报告相关文档
+4.  `Requirements`包含所选题目要求
+5.  `Screen`包含串口屏相关代码
 
-#### 参与贡献
 
-1.  Fork 本仓库
-2.  新建 Feat_xxx 分支
-3.  提交代码
-4.  新建 Pull Request
